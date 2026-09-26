@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0a0a0c">
-    <title>Entrenamiento y Salud</title>
+    <title>Entrenamiento y Salud - Panel Pro</title>
     
     <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Entrenamiento%20y%20Salud%22%2C%22short_name%22%3A%22Training%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0c%22%2C%22theme_color%22%3A%22%230a0a0c%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2936%2F2936886.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
     
@@ -401,7 +401,7 @@
             );
         }
 
-        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete }) {
+        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
             const [localEx, setLocalEx] = useState(exercise);
             const [editWeek, setEditWeek] = useState(1); 
             const [showInfoModal, setShowInfoModal] = useState(false);
@@ -461,7 +461,7 @@
                     )}
 
                     <div className="flex justify-between items-start mb-3 relative">
-                        <div className="w-5/6 relative flex items-center">
+                        <div className="w-2/3 relative flex items-center">
                             <input 
                                 className="bg-transparent font-bold text-lg outline-none w-full text-white placeholder-gray-500 tracking-wide" 
                                 value={localEx.name} 
@@ -471,8 +471,10 @@
                             />
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setShowInfoModal(true)} className="text-brand-500 hover:text-white transition-colors px-2 py-1"><i className="fa-solid fa-circle-info text-lg"></i></button>
-                            <button onClick={onDelete} className="text-gray-500 hover:text-red-400 transition-colors px-2 py-1"><i className="fa-solid fa-trash-can"></i></button>
+                            {!isFirst && <button onClick={onMoveUp} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover arriba"><i className="fa-solid fa-arrow-up"></i></button>}
+                            {!isLast && <button onClick={onMoveDown} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover abajo"><i className="fa-solid fa-arrow-down"></i></button>}
+                            <button onClick={() => setShowInfoModal(true)} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1" title="Información"><i className="fa-solid fa-circle-info text-lg"></i></button>
+                            <button onClick={onDelete} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
 
@@ -911,6 +913,7 @@
                 setPinInput('');
             };
 
+            /* NUEVO: Acciones de Gestión de Clientes para el Profesor */
             const addClient = () => {
                 if (!newClientName.trim()) return;
                 const newPin = Math.floor(1000 + Math.random() * 9000).toString();
@@ -926,6 +929,28 @@
                 
                 setNewClientName('');
                 showToast(`¡Alumno creado! PIN: ${newPin}`);
+            };
+
+            const deleteClient = (clientId) => {
+                if(window.confirm('¿Seguro que querés eliminar a este alumno y TODAS sus rutinas? Esta acción no se puede deshacer.')) {
+                    mutateAndSave((freshData) => {
+                        freshData.clients = freshData.clients.filter(c => c.id !== clientId);
+                        delete freshData.routines[clientId];
+                        delete freshData.progress[clientId];
+                    });
+                    showToast('Alumno eliminado correctamente.');
+                }
+            };
+
+            const editClientName = (clientId, oldName) => {
+                const newName = window.prompt('Nuevo nombre del alumno:', oldName);
+                if(newName && newName.trim() !== '' && newName !== oldName) {
+                    mutateAndSave((freshData) => {
+                        const client = freshData.clients.find(c => c.id === clientId);
+                        if(client) client.name = newName;
+                    });
+                    showToast('Nombre actualizado.');
+                }
             };
 
             const addDay = (clientId) => {
@@ -1060,6 +1085,22 @@
                     if(sec && sec.exercises) {
                         sec.exercises = sec.exercises.filter(e => e.id !== exerciseId);
                     }
+                });
+            };
+
+            /* NUEVO: Mover ejercicios arriba/abajo (Crucial para Entrenadores) */
+            const moveExercise = (clientId, dayId, secId, exerciseIndex, direction) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    const sec = day?.sections?.find(s => s.id === secId);
+                    if(!sec || !sec.exercises) return;
+
+                    const newIndex = exerciseIndex + direction;
+                    if(newIndex < 0 || newIndex >= sec.exercises.length) return;
+
+                    const temp = sec.exercises[exerciseIndex];
+                    sec.exercises[exerciseIndex] = sec.exercises[newIndex];
+                    sec.exercises[newIndex] = temp;
                 });
             };
 
@@ -1257,13 +1298,17 @@
                                                                     )}
                                                                 </div>
 
-                                                                {sec.exercises.map(ex => (
+                                                                {sec.exercises.map((ex, exIdx) => (
                                                                     <ExerciseRow 
                                                                         key={ex.id} 
-                                                                        exercise={ex} 
+                                                                        exercise={ex}
+                                                                        isFirst={exIdx === 0}
+                                                                        isLast={exIdx === sec.exercises.length - 1}
                                                                         clientProgress={globalData.progress?.[activeClient.id]}
                                                                         onUpdate={(u) => updateExerciseInSection(activeClient.id, activeDayId, sec.id, u)} 
                                                                         onDelete={() => deleteExerciseFromSection(activeClient.id, activeDayId, sec.id, ex.id)} 
+                                                                        onMoveUp={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, -1)}
+                                                                        onMoveDown={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, 1)}
                                                                     />
                                                                 ))}
 
@@ -1323,20 +1368,45 @@
                                         <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
                                         <button onClick={() => setView('home')} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
                                     </header>
+                                    
                                     <div className="p-5 space-y-4">
+                                        
+                                        {/* NUEVO DASHBOARD RAPIDO */}
+                                        <div className="grid grid-cols-2 gap-4 mb-6">
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-brand-500">{globalData.clients?.length || 0}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Alumnos Activos</span>
+                                            </div>
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-white">{Object.values(globalData.routines || {}).reduce((acc, curr) => acc + curr.length, 0)}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Plantillas Activas</span>
+                                            </div>
+                                        </div>
+
                                         <div className="flex gap-2 bg-dark-800/80 p-2 rounded-2xl border border-white/5 shadow-inner mb-6">
                                             <input className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" placeholder="Nuevo alumno..." value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
                                             <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/30 font-bold"><i className="fa-solid fa-plus"></i></button>
                                         </div>
 
                                         <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2">Listado de Alumnos</h3>
+                                        
+                                        {globalData.clients?.length === 0 && (
+                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                        )}
+
                                         {globalData.clients?.map(client => (
-                                            <div key={client.id} onClick={() => setActiveClient(client)} className="glass-panel p-4 rounded-2xl flex justify-between items-center cursor-pointer hover:border-brand-500/50 transition-all shadow-md border border-white/5">
-                                                <div>
+                                            <div key={client.id} className="glass-panel p-4 rounded-2xl flex justify-between items-center hover:border-brand-500/50 transition-all shadow-md border border-white/5 group">
+                                                <div className="flex-1 cursor-pointer" onClick={() => setActiveClient(client)}>
                                                     <p className="font-bold text-base text-white">{client.name}</p>
-                                                    <p className="text-xs text-brand-500 mt-1 font-semibold"><i className="fa-solid fa-key mr-1"></i> PIN: {client.pin}</p>
+                                                    <p className="text-xs text-brand-500 mt-1 font-semibold"><i className="fa-solid fa-key mr-1"></i> PIN: {client.pin} • <span className="text-gray-400">{(globalData.routines[client.id] || []).length} rutinas asignadas</span></p>
                                                 </div>
-                                                <i className="fa-solid fa-chevron-right text-gray-500 text-sm"></i>
+                                                
+                                                {/* Botones de gestión para el profesor (Editar/Eliminar) */}
+                                                <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); editClientName(client.id, client.name); }} className="text-gray-400 hover:text-brand-500 p-2 transition-colors" title="Editar Nombre"><i className="fa-solid fa-pen"></i></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteClient(client.id); }} className="text-gray-400 hover:text-red-500 p-2 transition-colors" title="Eliminar Alumno"><i className="fa-solid fa-trash-can"></i></button>
+                                                    <i className="fa-solid fa-chevron-right text-gray-500 text-sm ml-2 cursor-pointer hover:text-brand-500" onClick={() => setActiveClient(client)}></i>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
