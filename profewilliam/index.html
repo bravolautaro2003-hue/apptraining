@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>Panel Pro - App de Entrenamiento</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Entrenamiento%20y%20Salud%22%2C%22short_name%22%3A%22Training%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0c%22%2C%22theme_color%22%3A%22%230a0a0c%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2936%2F2936886.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.13/babel.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) { registration.unregister(); }
+            });
+        }
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#00E676', 600: '#00B85C', glow: 'rgba(0, 230, 118, 0.4)', blue: '#3b82f6' },
+                        dark: { 950: '#050507', 900: '#0a0a0c', 800: '#131318', 700: '#1d1d24', 600: '#2c2c35' }
+                    },
+                    animation: {
+                        'toast-down': 'toastDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.25s ease-out forwards',
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        toastDown: {
+                            '0%': { transform: 'translate(-50%, -120%)', opacity: 0 },
+                            '100%': { transform: 'translate(-50%, 0)', opacity: 1 },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: 0, transform: 'translateY(-6px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)' },
+                            '100%': { transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #050507; color: #f3f3f6; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #0a0a0c; border-left: 1px solid #1e1e24; border-right: 1px solid #1e1e24; box-shadow: 0 0 50px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .bg-watermark {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 140px;
+            color: rgba(255, 255, 255, 0.015);
+            pointer-events: none;
+            z-index: 0;
+            transform: rotate(-15deg);
+        }
+        
+        .glass-panel { background: rgba(22, 22, 28, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .glass-header { background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // ID EXCLUSIVO PARA WILLIAM (Aislado de cualquier otro profesor)
+        const CLIENTE_ID = 'profe_william';
+
+        const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const EXERCISE_CATALOG = [
+            // BLOQUE 1 - BASE Y DESCRIPCIONES
+            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
+            { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
+            { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
+            { name: "Sentadilla A Una Pierna Asistida", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Usá un soporte (TRX, poste) para equilibrarte. Bajá con una sola pierna manteniendo el talón firme. Gran trabajo de estabilización." },
+            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Empuje vertical." },
+            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra" },
+            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo al suelo. Mantené el torso firme." },
+            { name: "Peso Muerto Rumano", muscle: "Isquiosurales", equip: "Barra", description: "Flexión leve de rodillas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas." },
+            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra" },
+            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina" },
+            { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina" },
+            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. No arquees la zona lumbar." },
+            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina" },
+            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Mantené los pies firmes en el suelo." },
+            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas" },
+            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas" },
+            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea" },
+            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas." },
+            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea" },
+            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción." },
+            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea" },
+            { name: "Press Militar", muscle: "Hombros", equip: "Barra", description: "De pie o sentado. Empujá la barra verticalmente sin usar impulso de las piernas. Contraé abdomen para proteger la lumbar." },
+            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba." },
+            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas" },
+            { name: "Curl de Bíceps", muscle: "Bíceps", equip: "Mancuernas", description: "Mantené los codos fijos a los costados del cuerpo. Subí contrayendo el bíceps y bajá de forma controlada (fase excéntrica)." },
+            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas" },
+            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra" },
+            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea" },
+            { name: "Press Francés", muscle: "Tríceps", equip: "Barra" },
+            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal" },
+            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal" },
+            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
+            
+            // BLOQUE 2
+            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra" },
+            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas" },
+            { name: "Zancadas Caminando", muscle: "Cuádriceps", equip: "Mancuernas" },
+            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina" },
+            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina" },
+            { name: "Buenos Días", muscle: "Isquiosurales", equip: "Barra" },
+            { name: "Abducción en Máquina", muscle: "Glúteos", equip: "Máquina" },
+            { name: "Aducción en Máquina", muscle: "Aductores", equip: "Máquina" },
+            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea" },
+            { name: "Gemelos en Prensa", muscle: "Gemelos", equip: "Máquina" },
+            { name: "Gemelos Sentado", muscle: "Gemelos", equip: "Máquina" },
+            { name: "Press de Banca Declinado", muscle: "Pecho", equip: "Barra" },
+            { name: "Pullover con Mancuerna", muscle: "Pecho", equip: "Mancuernas" },
+            { name: "Flexiones de Brazos", muscle: "Pecho", equip: "Peso Corporal" },
+            { name: "Aperturas en Peck Deck", muscle: "Pecho", equip: "Máquina" },
+            { name: "Press Convergente", muscle: "Pecho", equip: "Máquina" },
+            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal" },
+            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina" },
+            { name: "Remo con Mancuerna a Una Mano", muscle: "Espalda", equip: "Mancuernas" },
+            { name: "Pulldown Brazos Rectos", muscle: "Espalda", equip: "Polea" },
+            { name: "Encogimientos de Hombros", muscle: "Trapecios", equip: "Barra" },
+            { name: "Encogimientos de Hombros (Mancuernas)", muscle: "Trapecios", equip: "Mancuernas" },
+            { name: "Elevaciones Frontales", muscle: "Hombros", equip: "Polea" },
+            { name: "Elevaciones Frontales (Mancuernas)", muscle: "Hombros", equip: "Mancuernas" },
+            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas" },
+            { name: "Face Pull", muscle: "Hombros", equip: "Polea" },
+            { name: "Remo al Cuello", muscle: "Hombros", equip: "Barra" },
+            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z" },
+            { name: "Curl Concentrado", muscle: "Bíceps", equip: "Mancuernas" },
+            { name: "Curl Araña", muscle: "Bíceps", equip: "Mancuernas" },
+            { name: "Curl Inverso", muscle: "Antebrazos", equip: "Barra" },
+            { name: "Extensión Tríceps Copa", muscle: "Tríceps", equip: "Mancuernas" },
+            { name: "Extensión Tríceps con Cuerda", muscle: "Tríceps", equip: "Polea" },
+            { name: "Patada de Tríceps (Polea)", muscle: "Tríceps", equip: "Polea" },
+            { name: "Patada de Tríceps (Mancuerna)", muscle: "Tríceps", equip: "Mancuernas" },
+            { name: "Elevación de Piernas Colgado", muscle: "Abdomen", equip: "Peso Corporal" },
+            { name: "Crunch en Polea", muscle: "Abdomen", equip: "Polea" },
+            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento" },
+            { name: "Giros Rusos", muscle: "Abdomen", equip: "Disco" },
+            { name: "Hiperextensiones", muscle: "Espalda Baja", equip: "Silla Romana" },
+
+            // BLOQUE 3 - 40 NUEVOS
+            { name: "Sentadilla Sissy", muscle: "Cuádriceps", equip: "Peso Corporal" },
+            { name: "Zancadas Inversas", muscle: "Cuádriceps", equip: "Mancuernas" },
+            { name: "Peso Muerto Sumo", muscle: "Glúteos", equip: "Barra" },
+            { name: "Curl Femoral de Pie", muscle: "Isquiosurales", equip: "Máquina" },
+            { name: "Extensión de Cadera (Máquina)", muscle: "Glúteos", equip: "Máquina" },
+            { name: "Abductor en Polea", muscle: "Glúteos", equip: "Polea" },
+            { name: "Aductor en Polea", muscle: "Aductores", equip: "Polea" },
+            { name: "Sentadilla Hack Inversa", muscle: "Glúteos", equip: "Máquina" },
+            { name: "Gemelos Costurera", muscle: "Gemelos", equip: "Máquina" },
+            { name: "Elevación Tibial", muscle: "Piernas", equip: "Peso Corporal" },
+            { name: "Press de Banca Agarre Estrecho", muscle: "Tríceps", equip: "Barra" },
+            { name: "Press de Banca (Smith)", muscle: "Pecho", equip: "Máquina" },
+            { name: "Aperturas en Banco Inclinado", muscle: "Pecho", equip: "Mancuernas" },
+            { name: "Pullover con Polea", muscle: "Espalda", equip: "Polea" },
+            { name: "Flexiones Diamante", muscle: "Tríceps", equip: "Peso Corporal" },
+            { name: "Dominadas Neutras", muscle: "Espalda", equip: "Peso Corporal" },
+            { name: "Jalón al Pecho Agarre Cerrado", muscle: "Espalda", equip: "Polea" },
+            { name: "Remo con Barra T Apoyado", muscle: "Espalda", equip: "Máquina" },
+            { name: "Remo Polea Baja Una Mano", muscle: "Espalda", equip: "Polea" },
+            { name: "Rack Pull", muscle: "Espalda Baja", equip: "Barra" },
+            { name: "Press Militar (Mancuernas)", muscle: "Hombros", equip: "Mancuernas" },
+            { name: "Elevaciones Laterales (Polea)", muscle: "Hombros", equip: "Polea" },
+            { name: "Elevaciones Laterales (Máquina)", muscle: "Hombros", equip: "Máquina" },
+            { name: "Pájaros (Peck Deck Inverso)", muscle: "Hombros", equip: "Máquina" },
+            { name: "Press Bradford", muscle: "Hombros", equip: "Barra" },
+            { name: "Curl de Bíceps en Polea Baja", muscle: "Bíceps", equip: "Polea" },
+            { name: "Curl Bayesian", muscle: "Bíceps", equip: "Polea" },
+            { name: "Curl Zottman", muscle: "Bíceps", equip: "Mancuernas" },
+            { name: "Curl en Banco Inclinado", muscle: "Bíceps", equip: "Mancuernas" },
+            { name: "Press Francés (Mancuernas)", muscle: "Tríceps", equip: "Mancuernas" },
+            { name: "Extensión Tríceps Tras Nuca (Polea)", muscle: "Tríceps", equip: "Polea" },
+            { name: "Extensión Tríceps Unilateral (Polea)", muscle: "Tríceps", equip: "Polea" },
+            { name: "Fondos entre Bancos", muscle: "Tríceps", equip: "Peso Corporal" },
+            { name: "Elevación de Piernas Tumbado", muscle: "Abdomen", equip: "Peso Corporal" },
+            { name: "Crunch Abdominal en Máquina", muscle: "Abdomen", equip: "Máquina" },
+            { name: "Plancha Lateral", muscle: "Abdomen", equip: "Peso Corporal" },
+            { name: "Paseo del Granjero", muscle: "Abdomen", equip: "Mancuernas" },
+            { name: "Woodchopper (Leñador en Polea)", muscle: "Abdomen", equip: "Polea" },
+            { name: "V-Ups (Abdominales en V)", muscle: "Abdomen", equip: "Peso Corporal" },
+            { name: "Toes to Bar (Pies a la Barra)", muscle: "Abdomen", equip: "Peso Corporal" }
+        ];
+
+        let audioCtx = null;
+        const unlockAudio = () => {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        };
+
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+        document.addEventListener('click', unlockAudio, { once: true });
+
+        const playAlarm = () => {
+            try {
+                if (!audioCtx) unlockAudio();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); 
+                oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2); 
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.6); 
+            } catch(e) { console.log("Audio falló", e); }
+        };
+
+        function ExerciseCatalogModal({ onClose, onSelect }) {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [muscleFilter, setMuscleFilter] = useState('');
+
+            const filteredExercises = EXERCISE_CATALOG.filter(ex => {
+                const matchesSearch = ex.name.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesMuscle = muscleFilter === '' || ex.muscle === muscleFilter;
+                return matchesSearch && matchesMuscle;
+            });
+
+            const uniqueMuscles = [...new Set(EXERCISE_CATALOG.map(ex => ex.muscle))].filter(Boolean).sort();
+
+            return (
+                <div className="absolute inset-0 z-[100] bg-dark-900 flex flex-col animate-slide-up h-full w-full">
+                    <header className="px-4 py-4 flex items-center justify-between glass-header">
+                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center text-white"><i className="fa-solid fa-arrow-left text-lg"></i></button>
+                        <h2 className="text-white font-bold text-lg">Añadir Ejercicio</h2>
+                        <button onClick={() => {
+                            const customName = prompt("Nombre del ejercicio personalizado:");
+                            if(customName) onSelect(customName);
+                        }} className="text-brand-blue font-semibold text-base pr-2">Crear</button>
+                    </header>
+
+                    <div className="p-4 border-b border-white/5 bg-dark-900/95 backdrop-blur-md">
+                        <div className="bg-dark-800 rounded-xl p-3 flex items-center gap-3 mb-4 border border-white/5">
+                            <i className="fa-solid fa-magnifying-glass text-gray-500"></i>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar ejercicio" 
+                                className="bg-transparent outline-none text-white w-full placeholder-gray-500"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            {searchTerm && <button onClick={() => setSearchTerm('')} className="text-gray-500"><i className="fa-solid fa-xmark"></i></button>}
+                        </div>
+
+                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+                            <button onClick={() => setMuscleFilter('')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${muscleFilter === '' ? 'bg-white text-black' : 'bg-dark-800 text-gray-300 border border-white/5'}`}>Todos</button>
+                            {uniqueMuscles.map(m => (
+                                <button key={m} onClick={() => setMuscleFilter(m)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${muscleFilter === m ? 'bg-white text-black' : 'bg-dark-800 text-gray-300 border border-white/5'}`}>
+                                    {m}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-2 hide-scrollbar bg-dark-950">
+                        <h3 className="text-white font-bold text-lg mb-4 mt-2">Ejercicios</h3>
+                        <div className="space-y-1 pb-10">
+                            {filteredExercises.map((ex, idx) => (
+                                <div key={idx} onClick={() => onSelect(ex.name)} className="flex items-center justify-between py-3 cursor-pointer hover:bg-white/5 rounded-xl px-2 transition-colors group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-md overflow-hidden border border-white/10 group-hover:border-brand-500 transition-colors">
+                                            {ex.image ? (
+                                                <img src={ex.image} alt={ex.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <i className="fa-solid fa-dumbbell text-dark-900 text-xl"></i>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-medium text-base leading-tight group-hover:text-brand-500 transition-colors">{ex.name}</h4>
+                                            <p className="text-gray-400 text-sm mt-0.5">{ex.muscle || 'Varios'} {ex.equip ? `• ${ex.equip}` : ''}</p>
+                                        </div>
+                                    </div>
+                                    <button className="text-gray-500 hover:text-white px-2"><i className="fa-solid fa-plus text-lg text-brand-500"></i></button>
+                                </div>
+                            ))}
+                            {filteredExercises.length === 0 && (
+                                <div className="text-center text-gray-500 mt-10">No se encontraron ejercicios.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function EditableTitle({ initialValue, placeholder, className, onSave }) {
+            const inputRef = useRef(null);
+            useEffect(() => {
+                if (inputRef.current && inputRef.current.value !== initialValue) {
+                    inputRef.current.value = initialValue || '';
+                }
+            }, [initialValue]);
+
+            return (
+                <input 
+                    ref={inputRef}
+                    type="text"
+                    defaultValue={initialValue || ''}
+                    placeholder={placeholder}
+                    className={className}
+                    onBlur={(e) => onSave(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                />
+            );
+        }
+
+        function ExerciseInfoModal({ exercise, isTeacher, onClose, onUpdate }) {
+            const [localDesc, setLocalDesc] = useState(exercise.description || '');
+            const [localLink, setLocalLink] = useState(exercise.link || '');
+
+            const handleSave = () => {
+                if (isTeacher && onUpdate) {
+                    onUpdate({ ...exercise, description: localDesc, link: localLink });
+                }
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={handleSave}>
+                    <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={handleSave} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                        
+                        <div className="flex items-center gap-4 mb-5 pr-6">
+                            {exercise.image ? (
+                                <img src={exercise.image} alt={exercise.name} className="w-16 h-16 rounded-2xl object-cover border border-white/10 shrink-0" />
+                            ) : (
+                                <div className="w-16 h-16 bg-dark-800 rounded-2xl flex items-center justify-center text-brand-500 text-2xl shrink-0"><i className="fa-solid fa-dumbbell"></i></div>
+                            )}
+                            <div>
+                                <h3 className="text-white font-bold text-lg leading-tight">{exercise.name}</h3>
+                                <p className="text-brand-500 text-xs font-black uppercase tracking-widest mt-1">{exercise.muscle || 'Músculo'} • {exercise.equip || 'Equipamiento'}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-dark-800 rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+                            <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider"><i className="fa-solid fa-book-open text-brand-500 mr-1.5"></i> Técnica / Detalles</h4>
+                            
+                            {isTeacher ? (
+                                <textarea 
+                                    className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none"
+                                    rows="4"
+                                    placeholder="Escribí acá la técnica, tips o postura requerida..."
+                                    value={localDesc}
+                                    onChange={(e) => setLocalDesc(e.target.value)}
+                                />
+                            ) : (
+                                <p className="text-gray-300 text-sm leading-relaxed">{exercise.description || 'Sin descripción detallada por el momento.'}</p>
+                            )}
+
+                            {isTeacher ? (
+                                <div className="mt-2">
+                                    <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2"><i className="fa-solid fa-link text-brand-500 mr-1.5"></i> Enlace a Video</h4>
+                                    <input 
+                                        type="url"
+                                        className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm"
+                                        placeholder="Ej: https://youtube.com/..."
+                                        value={localLink}
+                                        onChange={(e) => setLocalLink(e.target.value)}
+                                    />
+                                </div>
+                            ) : (
+                                exercise.link && (
+                                    <a href={exercise.link} target="_blank" rel="noopener noreferrer" className="mt-2 bg-dark-900 hover:bg-black p-3 rounded-xl flex items-center justify-center gap-2 text-brand-500 font-bold text-sm border border-brand-500/30 transition-colors shadow-inner">
+                                        <i className="fa-brands fa-youtube text-red-500 text-lg"></i> Ver video explicativo
+                                    </a>
+                                )
+                            )}
+                        </div>
+
+                        {isTeacher && (
+                            <button onClick={handleSave} className="w-full mt-6 bg-brand-500 text-white font-bold py-3.5 rounded-xl border border-brand-500 shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-colors">Guardar Ficha</button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+            const [localEx, setLocalEx] = useState(exercise);
+            const [editWeek, setEditWeek] = useState(1); 
+            const [showInfoModal, setShowInfoModal] = useState(false);
+            
+            const localExRef = useRef(exercise);
+
+            useEffect(() => {
+                setLocalEx(exercise);
+                localExRef.current = exercise;
+            }, [exercise]);
+
+            const updateLocalAndRef = (updated) => {
+                setLocalEx(updated);
+                localExRef.current = updated;
+            };
+
+            const handleChange = (field, value) => {
+                updateLocalAndRef({ ...localEx, [field]: value });
+            };
+
+            const handleWeekConfigChange = (weekNum, field, value) => {
+                const updatedWeeks = structuredClone(localEx.weeks || {});
+                if (!updatedWeeks[weekNum]) {
+                    updatedWeeks[weekNum] = { sets: localEx.sets || '4', reps: localEx.reps || '10' };
+                }
+                updatedWeeks[weekNum][field] = value;
+                updateLocalAndRef({ ...localEx, weeks: updatedWeeks });
+            };
+            
+            const handleBlur = () => {
+                setTimeout(() => {
+                    onUpdate(localExRef.current);
+                }, 150);
+            };
+
+            const currentWeekData = localEx.weeks?.[editWeek] || { sets: localEx.sets || '4', reps: localEx.reps || '10' };
+
+            const exerciseNotes = [];
+            if (clientProgress) {
+                [1,2,3,4].forEach(w => {
+                    const note = clientProgress[w]?.[localEx.id]?.note;
+                    if (note && note.trim() !== '') {
+                        exerciseNotes.push({ week: w, note });
+                    }
+                });
+            }
+
+            return (
+                <div className="glass-panel p-4 rounded-2xl mb-4 relative z-10 shadow-xl border border-white/5">
+                    {showInfoModal && (
+                        <ExerciseInfoModal 
+                            exercise={localEx} 
+                            isTeacher={true} 
+                            onClose={() => setShowInfoModal(false)}
+                            onUpdate={(updatedEx) => { updateLocalAndRef(updatedEx); onUpdate(updatedEx); }}
+                        />
+                    )}
+
+                    <div className="flex justify-between items-start mb-3 relative">
+                        <div className="w-2/3 relative flex items-center">
+                            <input 
+                                className="bg-transparent font-bold text-lg outline-none w-full text-white placeholder-gray-500 tracking-wide" 
+                                value={localEx.name} 
+                                onChange={(e) => handleChange('name', e.target.value)} 
+                                onBlur={handleBlur} 
+                                placeholder="Nombre del ejercicio" 
+                            />
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {!isFirst && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover arriba"><i className="fa-solid fa-arrow-up"></i></button>}
+                            {!isLast && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover abajo"><i className="fa-solid fa-arrow-down"></i></button>}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1" title="Información"><i className="fa-solid fa-circle-info text-lg"></i></button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+
+                    <div className="mb-3 pt-1">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest">Programación Semanal:</span>
+                            <div className="flex bg-dark-900 rounded-lg p-0.5 border border-dark-600">
+                                {[1, 2, 3, 4].map(w => (
+                                    <button key={w} type="button" onClick={() => setEditWeek(w)} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${editWeek === w ? 'bg-brand-500 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>S{w}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
+                            <div className="flex items-center gap-2 flex-1">
+                                <span className="text-xs text-gray-400">Series:</span>
+                                <input className="w-12 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} />
+                            </div>
+                            <div className="flex items-center gap-2 flex-1">
+                                <span className="text-xs text-gray-400">Reps/s:</span>
+                                <input className="w-16 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4 text-sm text-gray-400 items-center py-1">
+                        <div className="text-xs flex items-center gap-1.5">
+                            RIR <input type="text" className="w-12 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={localEx.rir || '2'} onChange={(e) => handleChange('rir', e.target.value)} onBlur={handleBlur} />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <i className="fa-regular fa-clock text-brand-500"></i> <input className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest || '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
+                        </div>
+                    </div>
+                    
+                    <div className="mt-3 pt-3 border-t border-dark-600 flex items-center gap-2.5">
+                        <input type="checkbox" id={`uni-${localEx.id}`} checked={localEx.isUnilateral || false} onChange={(e) => {
+                            const updated = { ...localEx, isUnilateral: e.target.checked };
+                            updateLocalAndRef(updated);
+                            onUpdate(updated); 
+                        }} className="w-4 h-4 accent-brand-500 rounded cursor-pointer" />
+                        <label htmlFor={`uni-${localEx.id}`} className="text-xs text-gray-300 cursor-pointer select-none font-medium">Ejercicio Unilateral (Separar Izq/Der)</label>
+                    </div>
+
+                    <div className="mt-3">
+                        <textarea 
+                            className="w-full bg-dark-900/80 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none box-border"
+                            rows="2"
+                            placeholder="Aclaraciones o notas rápidas para la sesión..."
+                            value={localEx.coachNote || ''}
+                            onChange={(e) => handleChange('coachNote', e.target.value)}
+                            onBlur={handleBlur}
+                        />
+                    </div>
+
+                    {exerciseNotes.length > 0 && (
+                        <div className="mt-3 bg-brand-500/10 p-3 rounded-xl border border-brand-500/30">
+                            <span className="text-brand-500 text-xs font-bold flex items-center gap-2 mb-2"><i className="fa-solid fa-comment-dots"></i> Feedback del alumno:</span>
+                            {exerciseNotes.map(en => (
+                                <div key={en.week} className="text-xs text-gray-300 mb-1 last:mb-0"><strong className="text-brand-500">Semana {en.week}:</strong> {en.note}</div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function ClientExerciseRow({ exercise, activeWeek, progressData, previousWeekData, allWeeksData, onSaveProgress, onStartRest, showToast }) {
+            const weekConfig = exercise.weeks?.[activeWeek] || { sets: exercise.sets || '4', reps: exercise.reps || '10' };
+            const baseSetsCount = parseInt(weekConfig.sets) || 1;
+            const isUni = exercise.isUnilateral === true;
+            const totalRows = isUni ? baseSetsCount * 2 : baseSetsCount;
+
+            const [showNotes, setShowNotes] = useState(false);
+            const [showHistory, setShowHistory] = useState(false);
+            const [showInfoModal, setShowInfoModal] = useState(false);
+            const [localNote, setLocalNote] = useState(progressData?.note || '');
+
+            const [localSets, setLocalSets] = useState(() => {
+                const saved = progressData?.sets;
+                if (saved && saved.length > 0) return saved;
+                return Array.from({length: totalRows}, () => ({ weight: '', reps: '', rir: '', done: false, type: 'N' }));
+            });
+
+            useEffect(() => {
+                const saved = progressData?.sets;
+                if (saved && saved.length > 0) {
+                    setLocalSets(saved);
+                } else {
+                    setLocalSets(Array.from({length: totalRows}, () => ({ weight: '', reps: '', rir: '', done: false, type: 'N' })));
+                }
+                setLocalNote(progressData?.note || '');
+            }, [progressData, totalRows, activeWeek]);
+
+            const updateSetLocal = (index, field, value) => {
+                const newSets = structuredClone(localSets);
+                newSets[index][field] = value;
+                setLocalSets(newSets);
+            };
+
+            const handleSetBlur = () => { onSaveProgress(localSets, localNote); };
+
+            const toggleDone = (index) => {
+                unlockAudio();
+                const newSets = structuredClone(localSets);
+                const wasDone = newSets[index].done;
+                newSets[index].done = !wasDone;
+                setLocalSets(newSets);
+                onSaveProgress(newSets, localNote);
+                if (!wasDone) onStartRest(exercise.rest || '90s');
+            };
+
+            const handleNoteChange = (e) => { setLocalNote(e.target.value); };
+            const handleNoteBlur = () => { onSaveProgress(localSets, localNote); };
+
+            const addSet = () => {
+                const addCount = isUni ? 2 : 1;
+                const newSets = structuredClone(localSets);
+                for(let i=0; i<addCount; i++){
+                    newSets.push({ weight: '', reps: '', rir: '', done: false, type: 'N' });
+                }
+                setLocalSets(newSets);
+                onSaveProgress(newSets, localNote);
+            };
+
+            const cycleSetType = (index) => {
+                const types = ['N', 'W', 'D'];
+                const current = localSets[index].type || 'N';
+                const next = types[(types.indexOf(current) + 1) % types.length];
+                updateSetLocal(index, 'type', next);
+                handleSetBlur();
+            };
+
+            const adjustWeight = (index, amount) => {
+                const currentVal = parseFloat(localSets[index].weight);
+                let newVal = isNaN(currentVal) ? (amount > 0 ? 2.5 : 0) : Math.max(0, currentVal + amount);
+                const updatedSets = structuredClone(localSets);
+                updatedSets[index].weight = newVal === 0 ? '' : newVal.toString();
+                setLocalSets(updatedSets);
+                onSaveProgress(updatedSets, localNote);
+            };
+
+            return (
+                <div className="mb-10 relative z-10">
+                    {showInfoModal && (
+                        <ExerciseInfoModal 
+                            exercise={exercise} 
+                            isTeacher={false} 
+                            onClose={() => setShowInfoModal(false)} 
+                        />
+                    )}
+
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 bg-dark-700 rounded-2xl flex items-center justify-center text-brand-500 shadow-lg border border-white/5 overflow-hidden">
+                                {exercise.image ? (
+                                    <img src={exercise.image} alt={exercise.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <i className="fa-solid fa-dumbbell text-lg"></i>
+                                )}
+                            </div>
+                            <div>
+                                <h4 onClick={() => setShowInfoModal(true)} className="font-bold text-base text-white leading-tight tracking-wide cursor-pointer hover:text-brand-500 flex items-center gap-1.5 transition-colors group">
+                                    {exercise.name} <i className="fa-solid fa-circle-info text-xs text-brand-500 opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                                </h4>
+                                <span className="text-xs text-brand-500 font-semibold">Sem. {activeWeek} • Pauta: {weekConfig.sets} x {weekConfig.reps} (RIR {exercise.rir || '2'})</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {exercise.coachNote && (
+                        <div className="bg-dark-800/90 border-l-4 border-brand-500 p-3 rounded-r-xl mb-4 flex gap-3 items-start shadow-inner">
+                            <i className="fa-solid fa-circle-info text-brand-500 mt-0.5"></i>
+                            <p className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{exercise.coachNote}</p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 mb-4">
+                        <button onClick={() => {setShowHistory(!showHistory); setShowNotes(false);}} className={`text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all border ${showHistory ? 'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/25' : 'bg-dark-800 text-gray-300 border-dark-600 hover:bg-dark-700'}`}>
+                            <i className="fa-solid fa-clock-rotate-left"></i> Historial
+                        </button>
+                        <button onClick={() => {setShowNotes(!showNotes); setShowHistory(false);}} className={`text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all border ${showNotes ? 'bg-brand-500 text-white border-brand-500 shadow-md shadow-brand-500/25' : 'bg-dark-800 text-gray-300 border-dark-600 hover:bg-dark-700'}`}>
+                            <i className="fa-solid fa-pencil"></i> Notas personales
+                        </button>
+                    </div>
+
+                    {showNotes && (
+                        <div className="mb-4 animate-fade-in origin-top w-full box-border">
+                            <textarea 
+                                value={localNote} 
+                                onChange={handleNoteChange} 
+                                onBlur={handleNoteBlur}
+                                placeholder="Anotá acá sensaciones, carga de máquina, etc..." 
+                                className="w-full bg-dark-800 text-white p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none h-24 shadow-inner box-border block"
+                            />
+                        </div>
+                    )}
+
+                    {showHistory && (
+                        <div className="mb-4 bg-dark-800 p-4 rounded-xl border border-dark-600 animate-fade-in origin-top shadow-inner text-xs">
+                            <h5 className="font-bold text-white mb-3 flex items-center gap-2"><i className="fa-solid fa-chart-simple text-brand-500"></i> Tus marcas este mesociclo</h5>
+                            {[1, 2, 3, 4].map(w => {
+                                const wData = allWeeksData?.[w]?.[exercise.id]?.sets;
+                                if (!wData || wData.length === 0) return null;
+                                return (
+                                    <div key={w} className="mb-3 pb-3 border-b border-dark-700 last:border-0 last:mb-0 last:pb-0 text-gray-300">
+                                        <span className="text-brand-500 font-bold block mb-1">Semana {w}:</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {wData.map((s, idx) => {
+                                                if(s.weight && s.reps) return (
+                                                    <span key={idx} className="bg-dark-700 px-2.5 py-1 rounded-lg text-xs border border-dark-600">{s.weight}kg x {s.reps} {s.rir !== undefined && s.rir !== '' ? `(RIR ${s.rir})` : ''}</span>
+                                                );
+                                                return null;
+                                            })}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            {!allWeeksData && <p className="text-gray-500 italic">Aún no hay registros en otras semanas.</p>}
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-[36px_55px_1fr_70px_50px_42px] gap-1 mb-2 text-[10px] text-gray-400 font-black uppercase tracking-widest px-1 text-center items-center">
+                        <span>Set</span>
+                        <span>Previa</span>
+                        <span>KG (±2.5)</span>
+                        <span>Reps/s</span>
+                        <span>RIR</span>
+                        <span></span>
+                    </div>
+                    
+                    {localSets.map((set, i) => {
+                        const prevSet = previousWeekData?.sets?.[i];
+                        const prevText = prevSet?.weight && prevSet?.reps ? `${prevSet.weight}x${prevSet.reps}` : '-';
+                        
+                        const isRight = isUni && (i % 2 !== 0);
+                        const setNum = isUni ? Math.floor(i / 2) + 1 : i + 1;
+                        const setType = set.type || 'N';
+                        
+                        let badgeText = setType === 'N' ? setNum : setType;
+                        if (isUni) {
+                            badgeText = `${badgeText}${isRight ? 'D' : 'I'}`;
+                        }
+
+                        let badgeStyle = "bg-dark-800 text-gray-400 border-dark-600";
+                        if (setType === 'W') badgeStyle = "bg-orange-950/60 text-orange-400 border-orange-800";
+                        else if (setType === 'D') badgeStyle = "bg-red-950/60 text-red-400 border-red-800";
+                        else if (isUni) badgeStyle = isRight ? "bg-blue-950/60 text-blue-400 border-blue-900" : "bg-emerald-950/60 text-emerald-400 border-emerald-900";
+
+                        return (
+                            <div key={i} className="grid grid-cols-[36px_55px_1fr_70px_50px_42px] gap-1 items-center mb-2.5">
+                                <button onClick={() => cycleSetType(i)} className={`w-9 h-10 flex items-center justify-center rounded-xl font-black text-xs border cursor-pointer hover:opacity-80 transition-opacity ${badgeStyle}`}>
+                                    {badgeText}
+                                </button>
+                                
+                                <div className="text-center text-gray-500 text-xs font-semibold truncate">
+                                    {prevText}
+                                </div>
+
+                                <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600 focus-within:border-brand-500 overflow-hidden shadow-inner">
+                                    <button type="button" onClick={() => adjustWeight(i, -2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">-</button>
+                                    <input 
+                                        type="text" 
+                                        inputMode="decimal"
+                                        className="w-full bg-transparent py-2.5 text-white outline-none text-center font-bold text-sm" 
+                                        placeholder="-" 
+                                        value={set.weight} 
+                                        onChange={(e) => updateSetLocal(i, 'weight', e.target.value)} 
+                                        onBlur={handleSetBlur}
+                                    />
+                                    <button type="button" onClick={() => adjustWeight(i, 2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">+</button>
+                                </div>
+                                
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-dark-800 rounded-xl py-2.5 text-white outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
+                                    placeholder="-" 
+                                    value={set.reps} 
+                                    onChange={(e) => updateSetLocal(i, 'reps', e.target.value)} 
+                                    onBlur={handleSetBlur}
+                                />
+
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-dark-800 rounded-xl py-2.5 text-brand-500 outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
+                                    placeholder="RIR" 
+                                    value={set.rir} 
+                                    onChange={(e) => updateSetLocal(i, 'rir', e.target.value)} 
+                                    onBlur={handleSetBlur}
+                                />
+                                
+                                <button onClick={() => toggleDone(i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
+                                    <i className="fa-solid fa-check"></i>
+                                </button>
+                            </div>
+                        )
+                    })}
+                    <button onClick={addSet} className="w-full mt-4 bg-dark-800 text-brand-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
+                        + Añadir serie {isUni ? 'I/D' : ''}
+                    </button>
+                </div>
+            );
+        }
+
+        function App() {
+            const [globalData, setGlobalData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [view, setView] = useState('landing'); 
+            const [currentUser, setCurrentUser] = useState(null);
+            const [pinInput, setPinInput] = useState('');
+            const [newClientName, setNewClientName] = useState('');
+            const [activeClient, setActiveClient] = useState(null);
+            const [activeDayId, setActiveDayId] = useState(null);
+            
+            const [activeWeek, setActiveWeek] = useState(1); 
+            const [isTrainingStarted, setIsTrainingStarted] = useState(false);
+            const [trainingTime, setTrainingTime] = useState(0);
+            
+            const [restTime, setRestTime] = useState(0); 
+            const [restTimerKey, setRestTimerKey] = useState(0); 
+            
+            const [catalogTarget, setCatalogTarget] = useState(null);
+
+            const [toast, setToast] = useState(null);
+            const showToast = (msg, type = 'info') => {
+                setToast({ msg, type });
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const mutateAndSave = async (mutationCallback) => {
+                if (!globalData) return;
+                
+                const optimisticData = structuredClone(globalData);
+                mutationCallback(optimisticData);
+                setGlobalData(optimisticData);
+
+                try {
+                    const { data: latest } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
+                    let freshData = optimisticData;
+                    
+                    if (latest && latest.data) {
+                        freshData = latest.data;
+                        mutationCallback(freshData);
+                    }
+                    
+                    await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: freshData });
+                } catch (e) {
+                    console.error("Error de sincronización:", e);
+                }
+            };
+
+            const updateAppSetting = (key, value) => {
+                mutateAndSave((freshData) => {
+                    freshData[key] = value;
+                });
+            };
+
+            useEffect(() => {
+                fetchData();
+                const channel = supabase.channel(`realtime_${CLIENTE_ID}`).on('postgres_changes', { event: '*', schema: 'public', table: 'bravo_state' }, (payload) => {
+                    if(payload && payload.new && payload.new.id === CLIENTE_ID) {
+                        setGlobalData(payload.new.data);
+                    }
+                }).subscribe();
+                return () => { supabase.removeChannel(channel); };
+            }, []);
+
+            useEffect(() => {
+                let interval = null;
+                if (view === 'cliente_entrenamiento' && isTrainingStarted) {
+                    interval = setInterval(() => setTrainingTime(t => t + 1), 1000);
+                } else { clearInterval(interval); }
+                return () => clearInterval(interval);
+            }, [view, isTrainingStarted]);
+
+            useEffect(() => {
+                let restInterval = null;
+                if (restTime > 0) {
+                    restInterval = setInterval(() => {
+                        setRestTime(t => {
+                            if (t <= 1) {
+                                if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+                                playAlarm();
+                                return 0;
+                            }
+                            return t - 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(restInterval);
+            }, [restTime > 0, restTimerKey]);
+
+            const startRest = (timeString) => {
+                let t = 0;
+                if (!timeString) { 
+                    t = 90; 
+                } else {
+                    let str = timeString.toLowerCase().trim();
+                    if (str.includes(':')) {
+                        const parts = str.split(':');
+                        t = parseInt(parts[0] || 0) * 60 + parseInt(parts[1] || 0);
+                    } else if (str.includes('m')) {
+                        const parts = str.split('m');
+                        const m = parseInt(parts[0]) || 0;
+                        const s = parseInt(parts[1]) || 0; 
+                        t = m * 60 + s;
+                    } else {
+                        t = parseInt(str) || 90; 
+                    }
+                }
+                setRestTime(t);
+                setRestTimerKey(k => k + 1); 
+            };
+
+            const formatTime = (secs) => {
+                const m = Math.floor(secs / 60).toString().padStart(2, '0');
+                const s = (secs % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            };
+
+            const fetchData = async () => {
+                try {
+                    const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
+                    if (data && data.data) {
+                        setGlobalData(data.data);
+                    } else {
+                        setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} });
+                    }
+                } catch (e) { 
+                    console.error(e);
+                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} });
+                }
+                setLoading(false);
+            };
+
+            const handleLogin = () => {
+                if (!globalData) return;
+                unlockAudio(); 
+                
+                if (pinInput === (globalData.profesorPin || '0000')) { setView('profesor'); } 
+                else {
+                    const client = globalData.clients?.find(c => c.pin === pinInput);
+                    if (client) { 
+                        setCurrentUser(client); 
+                        setView('cliente_listado'); 
+                    } else { showToast('PIN incorrecto. Revisalo bien.', 'error'); }
+                }
+                setPinInput('');
+            };
+
+            const addClient = () => {
+                if (!newClientName.trim()) return;
+                const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+                const newClient = { id: Date.now().toString(), name: newClientName, pin: newPin };
+                
+                mutateAndSave((freshData) => {
+                    if(!freshData.clients) freshData.clients = [];
+                    if(!freshData.routines) freshData.routines = {};
+                    if(!freshData.progress) freshData.progress = {};
+                    freshData.clients.push(newClient);
+                    freshData.routines[newClient.id] = [];
+                });
+                
+                setNewClientName('');
+                showToast(`¡Alumno creado! PIN: ${newPin}`);
+            };
+
+            const deleteClient = (clientId) => {
+                if(window.confirm('¿Seguro que querés eliminar a este alumno y TODAS sus rutinas? Esta acción no se puede deshacer.')) {
+                    mutateAndSave((freshData) => {
+                        freshData.clients = freshData.clients.filter(c => c.id !== clientId);
+                        delete freshData.routines[clientId];
+                        delete freshData.progress[clientId];
+                    });
+                    showToast('Alumno eliminado correctamente.');
+                }
+            };
+
+            const editClientName = (clientId, oldName) => {
+                const newName = window.prompt('Nuevo nombre del alumno:', oldName);
+                if(newName && newName.trim() !== '' && newName !== oldName) {
+                    mutateAndSave((freshData) => {
+                        const client = freshData.clients.find(c => c.id === clientId);
+                        if(client) client.name = newName;
+                    });
+                    showToast('Nombre actualizado.');
+                }
+            };
+
+            const addDay = (clientId) => {
+                const newId = Date.now().toString();
+                mutateAndSave((freshData) => {
+                    if(!freshData.routines[clientId]) freshData.routines[clientId] = [];
+                    freshData.routines[clientId].push({ 
+                        id: newId, 
+                        name: "Nueva Plantilla", 
+                        sections: [ { id: 'sec_1', name: 'Bloque Principal', exercises: [] } ] 
+                    });
+                });
+            };
+
+            const updateDayName = (clientId, dayId, newName) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if(day) day.name = newName;
+                });
+            };
+
+            const deleteDay = (clientId, dayId) => {
+                const confirmacion = window.confirm('¿Seguro que querés borrar esta plantilla entera?');
+                if (!confirmacion) return;
+                
+                mutateAndSave((freshData) => {
+                    if(freshData.routines[clientId]) {
+                        freshData.routines[clientId] = freshData.routines[clientId].filter(d => d.id !== dayId);
+                    }
+                });
+                
+                setActiveDayId(null);
+                showToast('Plantilla eliminada');
+            };
+
+            const cloneDay = (clientId, dayId) => {
+                mutateAndSave((freshData) => {
+                    const dayToClone = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!dayToClone) return;
+
+                    const clonedSections = (dayToClone.sections || [{ name: 'Bloque Principal', exercises: dayToClone.exercises || [] }]).map(sec => ({
+                        ...sec,
+                        id: Math.random().toString(36).substr(2, 9),
+                        exercises: (sec.exercises || []).map(ex => ({
+                            ...ex,
+                            id: Math.random().toString(36).substr(2, 9)
+                        }))
+                    }));
+
+                    const newDay = {
+                        id: Date.now().toString(),
+                        name: dayToClone.name + " (Copia)",
+                        sections: clonedSections
+                    };
+
+                    freshData.routines[clientId].push(newDay);
+                });
+                showToast('Plantilla duplicada con éxito');
+            };
+
+            const addSection = (clientId, dayId) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if(!day) return;
+                    if(!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+                    day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Nuevo Bloque', exercises: [] });
+                });
+            };
+
+            const updateSectionName = (clientId, dayId, secId, newName) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: newName, exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    } else {
+                        const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                        if(sec) sec.name = newName;
+                    }
+                });
+            };
+
+            const deleteSection = (clientId, dayId, secId) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+                    if (!day.sections) return;
+                    day.sections = day.sections.filter(s => s.id !== secId);
+                });
+            };
+
+            const handleExerciseSelected = (exerciseName) => {
+                if (!catalogTarget) return;
+                
+                const catInfo = EXERCISE_CATALOG.find(e => e.name === exerciseName);
+                const imageUrl = catInfo ? catInfo.image : null;
+                const description = catInfo ? catInfo.description : '';
+                const muscle = catInfo ? catInfo.muscle : '';
+                const equip = catInfo ? catInfo.equip : '';
+
+                const { clientId, dayId, secId } = catalogTarget;
+                
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+                    
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+                    
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                    if (sec && sec.exercises) {
+                        sec.exercises.push({ 
+                            id: Math.random().toString(36).substr(2, 9), 
+                            name: exerciseName,
+                            image: imageUrl, 
+                            description: description,
+                            muscle: muscle,
+                            equip: equip,
+                            link: '',
+                            sets: '4', reps: '10', rir: '2', rest: '90s', isUnilateral: false, weeks: {} 
+                        });
+                    }
+                });
+                setCatalogTarget(null);
+            };
+
+            const updateExerciseInSection = (clientId, dayId, secId, updatedExercise) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                    if (!sec || !sec.exercises) return;
+                    
+                    const index = sec.exercises.findIndex(e => e.id === updatedExercise.id);
+                    if(index !== -1) sec.exercises[index] = updatedExercise;
+                });
+            };
+
+            const deleteExerciseFromSection = (clientId, dayId, secId, exerciseId) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                    if(sec && sec.exercises) {
+                        sec.exercises = sec.exercises.filter(e => e.id !== exerciseId);
+                    }
+                });
+            };
+
+            const moveExercise = (clientId, dayId, secId, exerciseIndex, direction) => {
+                mutateAndSave((freshData) => {
+                    const day = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                    if(!sec || !sec.exercises) return;
+
+                    const newIndex = exerciseIndex + direction;
+                    if(newIndex < 0 || newIndex >= sec.exercises.length) return;
+
+                    const temp = sec.exercises[exerciseIndex];
+                    sec.exercises[exerciseIndex] = sec.exercises[newIndex];
+                    sec.exercises[newIndex] = temp;
+                });
+            };
+
+            const saveClientProgress = (exerciseId, setsArray, noteString, week) => {
+                mutateAndSave((freshData) => {
+                    if (!freshData.progress) freshData.progress = {};
+                    if (!freshData.progress[currentUser.id]) freshData.progress[currentUser.id] = {};
+                    if (!freshData.progress[currentUser.id][week]) freshData.progress[currentUser.id][week] = {};
+                    if (!freshData.progress[currentUser.id][week][exerciseId]) freshData.progress[currentUser.id][week][exerciseId] = {};
+                    
+                    if (setsArray) freshData.progress[currentUser.id][week][exerciseId].sets = setsArray;
+                    if (noteString !== undefined) freshData.progress[currentUser.id][week][exerciseId].note = noteString;
+                });
+            };
+
+            if (loading) return <div className="app-container flex justify-center items-center h-screen bg-dark-900 text-brand-500 text-2xl font-bold"><i className="fa-solid fa-fire fa-spin mr-3"></i> Cargando...</div>;
+
+            return (
+                <div className="relative">
+                    {view !== 'home' && view !== 'landing' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
+
+                    {catalogTarget && (
+                        <ExerciseCatalogModal 
+                            onClose={() => setCatalogTarget(null)} 
+                            onSelect={handleExerciseSelected} 
+                        />
+                    )}
+
+                    {toast && (
+                        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-2xl text-sm font-bold shadow-2xl animate-toast-down text-center flex items-center gap-3 whitespace-nowrap ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-brand-500 text-white shadow-brand-500/40'}`}>
+                            {toast.type === 'error' ? <i className="fa-solid fa-triangle-exclamation"></i> : <i className="fa-solid fa-bolt"></i>}
+                            {toast.msg}
+                        </div>
+                    )}
+
+                    {view === 'landing' && (
+                        <div className="app-container relative z-10 bg-dark-900 pb-10">
+                            <div
+                                className="p-6 pb-10 relative"
+                                style={{
+                                    backgroundImage: 'linear-gradient(to bottom, rgba(10,10,12,0.35) 0%, rgba(5,5,7,0.97) 100%), url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop")',
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center'
+                                }}
+                            >
+                                <div className="flex items-center justify-between mb-10 relative z-20">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-xs shadow-[0_0_15px_rgba(0,230,118,0.4)] border border-white/20 transform rotate-3">
+                                            <i className="fa-solid fa-dumbbell -rotate-3"></i>
+                                        </div>
+                                        <span className="text-white font-black text-sm tracking-wide">{globalData?.appTitle1 || 'Entrenamiento'} {(globalData?.appTitle2 || 'y Salud').toLowerCase()}</span>
+                                    </div>
+                                    <button onClick={() => setView('home')} className="text-xs font-bold text-white bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-colors">Ingresar</button>
+                                </div>
+
+                                <div className="relative z-20">
+                                    <h1 className="text-3xl font-black text-white leading-tight mb-3">Llevá a tus alumnos con una sola app, semana tras semana</h1>
+                                    <p className="text-gray-300 text-sm leading-relaxed mb-6">Armá las rutinas, cargá el catálogo de ejercicios y mirá el progreso real de cada alumno en la máquina. Sin planillas sueltas ni mensajes perdidos.</p>
+                                    <button onClick={() => setView('home')} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-brand-500/40 uppercase tracking-widest">
+                                        Empezar ahora
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-6 pt-2">
+                                <div className="grid grid-cols-1 gap-4 mb-10">
+                                    {[
+                                        { icon: 'fa-people-group', title: 'Alumnos ilimitados', text: 'Cada alumno entra con su propio PIN y ve solo su rutina.' },
+                                        { icon: 'fa-calendar-week', title: 'Rutinas semana a semana', text: 'Series, reps y RIR programados para las 4 semanas del mesociclo.' },
+                                        { icon: 'fa-chart-line', title: 'Progreso automático', text: 'Cada peso y repetición que carga el alumno queda guardado, semana por semana.' },
+                                        { icon: 'fa-mobile-screen', title: 'Instalable como app', text: 'Tus alumnos la agregan a la pantalla de inicio del celular, sin bajar nada de una tienda.' },
+                                    ].map((f, i) => (
+                                        <div key={i} className="glass-panel p-4 rounded-2xl flex gap-4 items-start border border-white/5">
+                                            <div className="w-11 h-11 shrink-0 bg-dark-800 rounded-xl flex items-center justify-center text-brand-500 border border-dark-600">
+                                                <i className={`fa-solid ${f.icon}`}></i>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-white font-bold text-sm mb-1">{f.title}</h3>
+                                                <p className="text-gray-400 text-xs leading-relaxed">{f.text}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <h2 className="text-white font-black text-lg mb-1">Para profesores y entrenadores</h2>
+                                <p className="text-gray-400 text-xs mb-5">Un panel de profesor por suscripción, con alumnos y plantillas sin límite.</p>
+
+                                <div className="space-y-4 mb-8">
+                                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h3 className="text-white font-bold text-base">Mensual</h3>
+                                            <span className="text-brand-500 font-black text-xl">$XX.XXX<span className="text-gray-400 text-xs font-semibold">/mes</span></span>
+                                        </div>
+                                        <ul className="text-xs text-gray-300 space-y-2 mb-4">
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Alumnos y plantillas sin límite</li>
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Catálogo de más de 100 ejercicios</li>
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Soporte por WhatsApp</li>
+                                        </ul>
+                                        <button onClick={() => showToast('¡Gracias por tu interés! Escribinos para activar tu suscripción.')} className="w-full bg-dark-800 text-white font-bold py-3 rounded-xl border border-white/10 hover:bg-dark-700 transition-colors text-sm">Suscribirme</button>
+                                    </div>
+
+                                    <div className="glass-panel p-5 rounded-2xl border-2 border-brand-500/50 relative">
+                                        <span className="absolute -top-3 left-5 bg-brand-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Más elegido</span>
+                                        <div className="flex items-center justify-between mb-3 mt-1">
+                                            <h3 className="text-white font-bold text-base">Anual</h3>
+                                            <span className="text-brand-500 font-black text-xl">$XX.XXX<span className="text-gray-400 text-xs font-semibold">/mes</span></span>
+                                        </div>
+                                        <ul className="text-xs text-gray-300 space-y-2 mb-4">
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Todo lo del plan mensual</li>
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Dos meses bonificados</li>
+                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Precio congelado durante el año</li>
+                                        </ul>
+                                        <button onClick={() => showToast('¡Gracias por tu interés! Escribinos para activar tu suscripción.')} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all text-sm uppercase tracking-wide">Suscribirme</button>
+                                    </div>
+                                </div>
+
+                                <p className="text-center text-gray-500 text-xs">¿Ya tenés una cuenta? <span onClick={() => setView('home')} className="text-brand-500 font-bold cursor-pointer">Iniciá sesión</span></p>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'home' && (
+                        <div 
+                            className="app-container flex flex-col justify-between p-6 h-screen relative z-10"
+                            style={{ 
+                                backgroundImage: 'linear-gradient(to bottom, rgba(10,10,12,0.3) 0%, rgba(5,5,7,0.95) 100%), url("https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=800&auto=format&fit=crop")', 
+                                backgroundSize: 'cover', 
+                                backgroundPosition: 'center' 
+                            }}
+                        >
+                            <button onClick={() => setView('landing')} className="text-white/70 hover:text-white w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm relative z-20">
+                                <i className="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div className="text-center animate-fade-in my-auto relative z-20">
+                                <div className="inline-flex justify-center items-center w-28 h-28 bg-gradient-to-br from-dark-800 to-dark-950 rounded-[2rem] border-2 border-brand-500/40 text-brand-500 mb-8 shadow-[0_0_40px_rgba(0,230,118,0.4)] relative overflow-hidden transform rotate-3">
+                                    <div className="absolute inset-0 bg-brand-500/10 backdrop-blur-md"></div>
+                                    <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_rgba(0,230,118,0.8)] -rotate-3"></i>
+                                </div>
+                                
+                                <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-0.5 drop-shadow-lg">{globalData?.appTitle1 || 'Entrenamiento'}</h1>
+                                <h2 className="text-xl font-bold text-brand-500 tracking-[0.2em] uppercase drop-shadow-md">{globalData?.appTitle2 || 'Y Salud'}</h2>
+                                <p className="text-[10px] text-gray-300 font-black tracking-widest mt-4 uppercase border-t border-white/20 pt-4 mx-auto w-3/4 opacity-90">Rendimiento & Biomecánica</p>
+                            </div>
+                            
+                            <div className="glass-panel p-6 rounded-[2rem] shadow-2xl mb-6 relative z-20">
+                                <input 
+                                    type="password" 
+                                    placeholder="INGRESA TU PIN" 
+                                    className="w-full bg-dark-950/50 p-4 rounded-2xl text-center text-xl tracking-[0.4em] outline-none mb-4 text-white border border-white/10 focus:border-brand-500 transition-colors font-bold placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 shadow-inner backdrop-blur-sm" 
+                                    value={pinInput} 
+                                    onChange={(e) => setPinInput(e.target.value)} 
+                                />
+                                <button onClick={handleLogin} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-4 rounded-2xl font-black text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/40 uppercase tracking-widest">
+                                    Ingresar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'profesor' && (
+                        <div className="app-container pb-20 relative z-10 bg-dark-900">
+                            {activeClient ? (
+                                activeDayId && globalData.routines[activeClient.id]?.find(d => d.id === activeDayId) ? (
+                                    <>
+                                        <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-50">
+                                            <button onClick={() => setActiveDayId(null)} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                            <h2 className="font-bold text-base text-white tracking-wide">Editar Plantilla</h2>
+                                            <div className="w-10"></div>
+                                        </header>
+                                        <div className="p-4">
+                                            <EditableTitle 
+                                                initialValue={globalData.routines[activeClient.id].find(d => d.id === activeDayId).name}
+                                                placeholder="Nombre del día..."
+                                                className="font-black text-2xl lowercase bg-transparent outline-none text-white w-full mb-6 border-b border-dark-700 pb-2 focus:border-brand-500 transition-colors placeholder-gray-600"
+                                                onSave={(val) => updateDayName(activeClient.id, activeDayId, val)}
+                                            />
+                                            
+                                            {(() => {
+                                                const day = globalData.routines[activeClient.id].find(d => d.id === activeDayId);
+                                                const sections = day.sections || [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+
+                                                return (
+                                                    <div className="space-y-6">
+                                                        {sections.map((sec, secIdx) => (
+                                                            <div key={sec.id || secIdx} className="bg-dark-800/80 backdrop-blur-md p-4 rounded-3xl border border-white/5 shadow-xl">
+                                                                <div className="flex items-center justify-between mb-4 pb-2 border-b border-dark-700">
+                                                                    <EditableTitle 
+                                                                        initialValue={sec.name}
+                                                                        placeholder="NOMBRE DEL BLOQUE..."
+                                                                        className="bg-transparent font-black text-brand-500 text-sm uppercase tracking-wider outline-none w-3/4 placeholder-gray-500"
+                                                                        onSave={(val) => updateSectionName(activeClient.id, activeDayId, sec.id, val)}
+                                                                    />
+                                                                    {sections.length > 1 && (
+                                                                        <button onClick={() => deleteSection(activeClient.id, activeDayId, sec.id)} className="text-gray-500 hover:text-red-400 transition-colors text-xs px-2 py-1"><i className="fa-solid fa-trash-can"></i></button>
+                                                                    )}
+                                                                </div>
+
+                                                                {sec.exercises.map((ex, exIdx) => (
+                                                                    <ExerciseRow 
+                                                                        key={ex.id} 
+                                                                        exercise={ex}
+                                                                        isFirst={exIdx === 0}
+                                                                        isLast={exIdx === sec.exercises.length - 1}
+                                                                        clientProgress={globalData.progress?.[activeClient.id]}
+                                                                        onUpdate={(u) => updateExerciseInSection(activeClient.id, activeDayId, sec.id, u)} 
+                                                                        onDelete={() => deleteExerciseFromSection(activeClient.id, activeDayId, sec.id, ex.id)} 
+                                                                        onMoveUp={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, -1)}
+                                                                        onMoveDown={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, 1)}
+                                                                    />
+                                                                ))}
+
+                                                                <button onClick={() => setCatalogTarget({clientId: activeClient.id, dayId: activeDayId, secId: sec.id})} className="w-full bg-dark-700 text-brand-500 font-bold py-3.5 rounded-2xl mt-2 text-xs uppercase tracking-wider border border-white/5 hover:bg-dark-600 transition-colors shadow-sm flex items-center justify-center gap-2">
+                                                                    <i className="fa-solid fa-magnifying-glass"></i> Añadir desde catálogo
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        <button onClick={() => addSection(activeClient.id, activeDayId)} className="w-full bg-dark-800 text-white font-bold py-4 rounded-2xl mt-4 border border-white/5 hover:bg-dark-700 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
+                                                            <i className="fa-solid fa-layer-group text-brand-500"></i> Nuevo bloque
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-10">
+                                            <button onClick={() => setActiveClient(null)} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                            <h2 className="font-bold text-base text-white tracking-wide">{activeClient.name}</h2>
+                                            <div className="w-10"></div>
+                                        </header>
+                                        
+                                        <div className="p-4">
+                                            <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-4">Plantillas asignadas</h3>
+                                            <div className="space-y-4">
+                                                {(globalData.routines[activeClient.id] || []).map(day => {
+                                                    const totalEx = day.sections ? day.sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0) : (day.exercises?.length || 0);
+                                                    return (
+                                                        <div key={day.id} onClick={() => setActiveDayId(day.id)} className="glass-panel p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:border-brand-500/50 transition-all shadow-md group border border-white/5">
+                                                            <div className="w-14 h-14 bg-dark-800 rounded-xl shrink-0 flex items-center justify-center text-brand-500 border border-dark-600 group-hover:scale-105 transition-transform">
+                                                                <i className="fa-solid fa-dumbbell text-xl"></i>
+                                                            </div>
+                                                            <div className="flex-1 overflow-hidden">
+                                                                <h4 className="font-bold text-base text-white truncate lowercase">{day.name}</h4>
+                                                                <p className="text-xs text-gray-400 truncate mt-0.5">{totalEx} ejercicios programados</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <button onClick={(e) => { e.stopPropagation(); cloneDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors"><i className="fa-solid fa-copy"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); deleteDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-red-400 transition-colors"><i className="fa-solid fa-trash-can"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <button onClick={() => addDay(activeClient.id)} className="mt-6 flex items-center justify-center gap-2 text-white font-black w-full bg-brand-500 p-4 rounded-2xl hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/30 uppercase text-xs tracking-wider">
+                                                <i className="fa-regular fa-folder text-base"></i> Crear nueva plantilla
+                                            </button>
+                                        </div>
+                                    </>
+                                )
+                            ) : (
+                                <>
+                                    <header className="p-5 flex justify-between items-center glass-header sticky top-0 z-10">
+                                        <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
+                                        <button onClick={() => setView('home')} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
+                                    </header>
+                                    
+                                    <div className="p-5 space-y-4">
+                                        
+                                        <div className="grid grid-cols-2 gap-4 mb-6">
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-brand-500">{globalData.clients?.length || 0}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Alumnos Activos</span>
+                                            </div>
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-white">{Object.values(globalData.routines || {}).reduce((acc, curr) => acc + curr.length, 0)}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Plantillas Activas</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 bg-dark-800/80 p-2 rounded-2xl border border-white/5 shadow-inner mb-6">
+                                            <input className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" placeholder="Nuevo alumno..." value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                                            <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/30 font-bold"><i className="fa-solid fa-plus"></i></button>
+                                        </div>
+
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Marca Blanca)</h3>
+                                        <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-3 shadow-md mb-6">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título Principal</label>
+                                                <input 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                    value={globalData.appTitle1 || 'Entrenamiento'}
+                                                    onChange={(e) => updateAppSetting('appTitle1', e.target.value)}
+                                                    placeholder="Ej: Alpha"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subtítulo</label>
+                                                <input 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-brand-500 font-bold outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                    value={globalData.appTitle2 || 'Y Salud'}
+                                                    onChange={(e) => updateAppSetting('appTitle2', e.target.value)}
+                                                    placeholder="Ej: Fitness"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PIN del Profesor</label>
+                                                <div className="flex gap-2 mt-1">
+                                                    <input 
+                                                        type="password" 
+                                                        className="flex-1 bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm tracking-widest"
+                                                        placeholder="Nuevo PIN maestro..."
+                                                        id="newAdminPin"
+                                                    />
+                                                    <button onClick={() => {
+                                                        const newPin = document.getElementById('newAdminPin').value;
+                                                        if(newPin.length >= 4) {
+                                                            updateAppSetting('profesorPin', newPin);
+                                                            showToast('PIN de profesor actualizado correctamente');
+                                                            document.getElementById('newAdminPin').value = '';
+                                                        } else {
+                                                            showToast('El PIN debe tener al menos 4 caracteres', 'error');
+                                                        }
+                                                    }} className="bg-brand-500 text-white px-4 rounded-xl font-bold text-xs hover:bg-brand-600 shadow-md">Cambiar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos</h3>
+                                        
+                                        {globalData.clients?.length === 0 && (
+                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                        )}
+
+                                        {globalData.clients?.map(client => (
+                                            <div key={client.id} className="glass-panel p-4 rounded-2xl flex justify-between items-center hover:border-brand-500/50 transition-all shadow-md border border-white/5 group mb-3">
+                                                <div className="flex-1 cursor-pointer" onClick={() => setActiveClient(client)}>
+                                                    <p className="font-bold text-base text-white">{client.name}</p>
+                                                    <p className="text-xs text-brand-500 mt-1 font-semibold"><i className="fa-solid fa-key mr-1"></i> PIN: {client.pin} • <span className="text-gray-400">{(globalData.routines[client.id] || []).length} rutinas asignadas</span></p>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); editClientName(client.id, client.name); }} className="text-gray-400 hover:text-brand-500 p-2 transition-colors" title="Editar Nombre"><i className="fa-solid fa-pen"></i></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteClient(client.id); }} className="text-gray-400 hover:text-red-500 p-2 transition-colors" title="Eliminar Alumno"><i className="fa-solid fa-trash-can"></i></button>
+                                                    <i className="fa-solid fa-chevron-right text-gray-500 text-sm ml-2 cursor-pointer hover:text-brand-500" onClick={() => setActiveClient(client)}></i>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {view === 'cliente_listado' && (
+                        <div className="app-container pb-24 relative z-10 bg-dark-900">
+                            <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-10">
+                                <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-[10px] shadow-[0_0_15px_rgba(0,230,118,0.4)] border border-white/20 transform rotate-3">
+                                        <i className="fa-solid fa-dumbbell -rotate-3"></i>
+                                    </div>
+                                    <div className="flex flex-col leading-none">
+                                        <span className="uppercase tracking-wider text-[11px]">{globalData?.appTitle1 || 'Entrenamiento'}</span>
+                                        <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Y Salud'}</span>
+                                    </div>
+                                </h1>
+                                <button onClick={() => setView('home')} className="text-white bg-dark-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm border border-white/5">Salir</button>
+                            </header>
+
+                            <div className="p-5">
+                                <div className="mb-6 bg-dark-800/60 p-4 rounded-2xl border border-white/5">
+                                    <h2 className="text-xl font-black text-white">Hola, {currentUser?.name || 'Atleta'}</h2>
+                                    <p className="text-xs text-gray-400 mt-0.5">Seleccioná tu semana y a darlo todo.</p>
+                                </div>
+
+                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-3">Seleccionar semana</h3>
+                                <div className="flex bg-dark-800/90 rounded-2xl p-1.5 mb-8 border border-white/5 shadow-inner">
+                                    {[1, 2, 3, 4].map(num => (
+                                        <button key={num} onClick={() => setActiveWeek(num)} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${activeWeek === num ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'text-gray-400 hover:text-white'}`}>Sem. {num}</button>
+                                    ))}
+                                </div>
+
+                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-4">Tus plantillas</h3>
+                                <div className="space-y-4">
+                                    {(globalData.routines[currentUser.id] || []).map(day => {
+                                        const totalEx = day.sections ? day.sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0) : (day.exercises?.length || 0);
+                                        return (
+                                            <div key={day.id} onClick={() => {setActiveDayId(day.id); setIsTrainingStarted(false); setView('cliente_entrenamiento');}} className="glass-panel p-4 rounded-2xl flex items-center gap-4 cursor-pointer group hover:border-brand-500/50 transition-all shadow-md border border-white/5">
+                                                <div className="w-14 h-14 bg-dark-800 rounded-2xl shrink-0 flex items-center justify-center text-brand-500 border border-dark-600 group-hover:scale-105 transition-transform shadow-inner">
+                                                    <i className="fa-solid fa-dumbbell text-xl"></i>
+                                                </div>
+                                                <div className="flex-1 overflow-hidden">
+                                                    <h4 className="font-bold text-base text-white truncate lowercase">{day.name}</h4>
+                                                    <p className="text-xs text-gray-400 truncate mt-0.5">{totalEx} ejercicios programados</p>
+                                                </div>
+                                                <i className="fa-solid fa-chevron-right text-gray-600 text-xs pr-1"></i>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            
+                            <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 text-gray-400 pb-5 z-20">
+                                <button className="text-brand-500 flex flex-col items-center gap-1"><i className="fa-solid fa-dumbbell text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Entrenar</span></button>
+                                <button onClick={() => showToast('Próximamente: Estadísticas de progreso')} className="hover:text-white transition-colors flex flex-col items-center gap-1"><i className="fa-solid fa-chart-line text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Progreso</span></button>
+                                <button onClick={() => showToast('Próximamente: Perfil de usuario')} className="hover:text-white transition-colors flex flex-col items-center gap-1"><i className="fa-regular fa-user text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Perfil</span></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'cliente_entrenamiento' && (
+                        !isTrainingStarted ? (
+                            <div className="app-container pb-24 relative z-10 bg-dark-900">
+                                <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-10">
+                                    <button onClick={() => setView('cliente_listado')} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                    <button onClick={() => showToast('Próximamente: IA adaptativa')} className="bg-dark-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-white/5 hover:border-brand-500 transition-colors"><i className="fa-solid fa-wand-magic-sparkles text-brand-500"></i> Adaptar</button>
+                                </header>
+
+                                <div className="p-5">
+                                    <h2 className="font-black text-3xl lowercase text-white mb-1 tracking-tight">{(globalData.routines[currentUser.id]?.find(d => d.id === activeDayId) || {}).name}</h2>
+                                    <p className="text-xs text-brand-500 font-black uppercase tracking-widest mb-8">Semana {activeWeek} del Mesociclo</p>
+
+                                    {(() => {
+                                        const day = globalData.routines[currentUser.id]?.find(d => d.id === activeDayId) || {};
+                                        const sections = day.sections || [{ name: 'Bloque Principal', exercises: day.exercises || [] }];
+
+                                        return (
+                                            <div className="space-y-8">
+                                                {sections.map((sec, sIdx) => (
+                                                    <div key={sIdx}>
+                                                        <h3 className="font-black text-xs text-brand-500 uppercase tracking-widest mb-3 border-b border-dark-700 pb-2">{sec.name}</h3>
+                                                        <div className="space-y-3">
+                                                            {sec.exercises?.map((ex) => {
+                                                                const wCfg = ex.weeks?.[activeWeek] || { sets: ex.sets || '4', reps: ex.reps || '10' };
+                                                                return (
+                                                                    <div key={ex.id} className="glass-panel p-3.5 rounded-2xl flex gap-3.5 items-center border border-white/5 shadow-sm">
+                                                                        <div className="w-12 h-12 bg-dark-800 rounded-2xl flex items-center justify-center shrink-0 border border-dark-600 text-brand-500 overflow-hidden">
+                                                                            {ex.image ? (
+                                                                                <img src={ex.image} alt={ex.name} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <i className="fa-solid fa-dumbbell text-base"></i>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 overflow-hidden">
+                                                                            <p className="text-[10px] text-brand-500 font-black mb-0.5 tracking-wider uppercase">{wCfg.sets} SERIES x {wCfg.reps} REPS/S • RIR {ex.rir || '2'}</p>
+                                                                            <p className="font-bold text-white text-sm leading-tight truncate">{ex.name}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur p-4 border-t border-white/5 z-20">
+                                    <button onClick={() => { setIsTrainingStarted(true); setTrainingTime(0); setRestTime(0); unlockAudio(); }} className="w-full bg-brand-500 text-white font-black text-sm uppercase tracking-wider py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/30">
+                                        <i className="fa-solid fa-play"></i> Empezar Entrenamiento
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="app-container pb-20 relative z-10 bg-dark-900">
+                                <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-20 shadow-md">
+                                    <button onClick={() => showToast('Sesión en curso')} className="text-brand-500 text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-dark-800 px-3.5 py-2 rounded-xl border border-white/5"><i className="fa-solid fa-stopwatch animate-pulse"></i> {formatTime(trainingTime)}</button>
+                                    <button onClick={() => { setIsTrainingStarted(false); showToast(`¡Entrenamiento finalizado! Tiempo: ${formatTime(trainingTime)}`); setView('cliente_listado'); }} className="bg-dark-800 text-brand-500 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border border-white/5 hover:bg-dark-700 transition-colors">Terminar</button>
+                                </header>
+
+                                <div className="p-4 pt-6">
+                                    {(() => {
+                                        const day = globalData.routines[currentUser.id]?.find(d => d.id === activeDayId) || {};
+                                        const sections = day.sections || [{ name: 'Bloque Principal', exercises: day.exercises || [] }];
+
+                                        return (
+                                            <div className="space-y-8">
+                                                {sections.map((sec, sIdx) => (
+                                                    <div key={sIdx}>
+                                                        <h3 className="font-black text-xs text-brand-500 uppercase tracking-widest mb-3 border-b border-dark-700 pb-2 flex items-center gap-2">
+                                                            <i className="fa-solid fa-layer-group"></i> {sec.name}
+                                                        </h3>
+                                                        <div className="space-y-6">
+                                                            {sec.exercises?.map(ex => {
+                                                                const safePreviousWeekData = activeWeek > 1 ? globalData.progress?.[currentUser.id]?.[activeWeek - 1]?.[ex.id] : null;
+                                                                
+                                                                return (
+                                                                    <ClientExerciseRow 
+                                                                        key={`${ex.id}-${activeWeek}`} 
+                                                                        exercise={ex} 
+                                                                        activeWeek={activeWeek}
+                                                                        progressData={globalData.progress?.[currentUser.id]?.[activeWeek]?.[ex.id]} 
+                                                                        previousWeekData={safePreviousWeekData}
+                                                                        allWeeksData={globalData.progress?.[currentUser.id]}
+                                                                        onSaveProgress={(setsArray, noteString) => saveClientProgress(ex.id, setsArray, noteString, activeWeek)} 
+                                                                        onStartRest={startRest}
+                                                                        showToast={showToast}
+                                                                    />
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {restTime > 0 && (
+                                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-6 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_rgba(0,230,118,0.6)] flex items-center gap-3 z-50 animate-bounce cursor-pointer uppercase border border-white/20" onClick={() => setRestTime(0)}>
+                                        <i className="fa-solid fa-stopwatch animate-pulse text-lg"></i>
+                                        Descanso: {Math.floor(restTime/60)}:{(restTime%60).toString().padStart(2,'0')}
+                                        <div className="ml-1 bg-black/20 hover:bg-black/40 transition-colors rounded-xl w-6 h-6 flex items-center justify-center text-xs"><i className="fa-solid fa-xmark"></i></div>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
