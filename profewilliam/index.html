@@ -82,7 +82,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // ID EXCLUSIVO PARA WILLIAM (Aislado de cualquier otro profesor)
+        // ID DEL CLIENTE (Cambiá esto para cada profesor que te compre la app)
         const CLIENTE_ID = 'profe_william';
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
@@ -90,7 +90,6 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const EXERCISE_CATALOG = [
-            // BLOQUE 1 - BASE Y DESCRIPCIONES
             { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
             { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
             { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
@@ -122,91 +121,7 @@
             { name: "Press Francés", muscle: "Tríceps", equip: "Barra" },
             { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal" },
             { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
-            
-            // BLOQUE 2
-            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra" },
-            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas" },
-            { name: "Zancadas Caminando", muscle: "Cuádriceps", equip: "Mancuernas" },
-            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina" },
-            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina" },
-            { name: "Buenos Días", muscle: "Isquiosurales", equip: "Barra" },
-            { name: "Abducción en Máquina", muscle: "Glúteos", equip: "Máquina" },
-            { name: "Aducción en Máquina", muscle: "Aductores", equip: "Máquina" },
-            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea" },
-            { name: "Gemelos en Prensa", muscle: "Gemelos", equip: "Máquina" },
-            { name: "Gemelos Sentado", muscle: "Gemelos", equip: "Máquina" },
-            { name: "Press de Banca Declinado", muscle: "Pecho", equip: "Barra" },
-            { name: "Pullover con Mancuerna", muscle: "Pecho", equip: "Mancuernas" },
-            { name: "Flexiones de Brazos", muscle: "Pecho", equip: "Peso Corporal" },
-            { name: "Aperturas en Peck Deck", muscle: "Pecho", equip: "Máquina" },
-            { name: "Press Convergente", muscle: "Pecho", equip: "Máquina" },
-            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal" },
-            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina" },
-            { name: "Remo con Mancuerna a Una Mano", muscle: "Espalda", equip: "Mancuernas" },
-            { name: "Pulldown Brazos Rectos", muscle: "Espalda", equip: "Polea" },
-            { name: "Encogimientos de Hombros", muscle: "Trapecios", equip: "Barra" },
-            { name: "Encogimientos de Hombros (Mancuernas)", muscle: "Trapecios", equip: "Mancuernas" },
-            { name: "Elevaciones Frontales", muscle: "Hombros", equip: "Polea" },
-            { name: "Elevaciones Frontales (Mancuernas)", muscle: "Hombros", equip: "Mancuernas" },
-            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas" },
-            { name: "Face Pull", muscle: "Hombros", equip: "Polea" },
-            { name: "Remo al Cuello", muscle: "Hombros", equip: "Barra" },
-            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z" },
-            { name: "Curl Concentrado", muscle: "Bíceps", equip: "Mancuernas" },
-            { name: "Curl Araña", muscle: "Bíceps", equip: "Mancuernas" },
-            { name: "Curl Inverso", muscle: "Antebrazos", equip: "Barra" },
-            { name: "Extensión Tríceps Copa", muscle: "Tríceps", equip: "Mancuernas" },
-            { name: "Extensión Tríceps con Cuerda", muscle: "Tríceps", equip: "Polea" },
-            { name: "Patada de Tríceps (Polea)", muscle: "Tríceps", equip: "Polea" },
-            { name: "Patada de Tríceps (Mancuerna)", muscle: "Tríceps", equip: "Mancuernas" },
-            { name: "Elevación de Piernas Colgado", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Crunch en Polea", muscle: "Abdomen", equip: "Polea" },
-            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento" },
-            { name: "Giros Rusos", muscle: "Abdomen", equip: "Disco" },
-            { name: "Hiperextensiones", muscle: "Espalda Baja", equip: "Silla Romana" },
-
-            // BLOQUE 3 - 40 NUEVOS
-            { name: "Sentadilla Sissy", muscle: "Cuádriceps", equip: "Peso Corporal" },
-            { name: "Zancadas Inversas", muscle: "Cuádriceps", equip: "Mancuernas" },
-            { name: "Peso Muerto Sumo", muscle: "Glúteos", equip: "Barra" },
-            { name: "Curl Femoral de Pie", muscle: "Isquiosurales", equip: "Máquina" },
-            { name: "Extensión de Cadera (Máquina)", muscle: "Glúteos", equip: "Máquina" },
-            { name: "Abductor en Polea", muscle: "Glúteos", equip: "Polea" },
-            { name: "Aductor en Polea", muscle: "Aductores", equip: "Polea" },
-            { name: "Sentadilla Hack Inversa", muscle: "Glúteos", equip: "Máquina" },
-            { name: "Gemelos Costurera", muscle: "Gemelos", equip: "Máquina" },
-            { name: "Elevación Tibial", muscle: "Piernas", equip: "Peso Corporal" },
-            { name: "Press de Banca Agarre Estrecho", muscle: "Tríceps", equip: "Barra" },
-            { name: "Press de Banca (Smith)", muscle: "Pecho", equip: "Máquina" },
-            { name: "Aperturas en Banco Inclinado", muscle: "Pecho", equip: "Mancuernas" },
-            { name: "Pullover con Polea", muscle: "Espalda", equip: "Polea" },
-            { name: "Flexiones Diamante", muscle: "Tríceps", equip: "Peso Corporal" },
-            { name: "Dominadas Neutras", muscle: "Espalda", equip: "Peso Corporal" },
-            { name: "Jalón al Pecho Agarre Cerrado", muscle: "Espalda", equip: "Polea" },
-            { name: "Remo con Barra T Apoyado", muscle: "Espalda", equip: "Máquina" },
-            { name: "Remo Polea Baja Una Mano", muscle: "Espalda", equip: "Polea" },
-            { name: "Rack Pull", muscle: "Espalda Baja", equip: "Barra" },
-            { name: "Press Militar (Mancuernas)", muscle: "Hombros", equip: "Mancuernas" },
-            { name: "Elevaciones Laterales (Polea)", muscle: "Hombros", equip: "Polea" },
-            { name: "Elevaciones Laterales (Máquina)", muscle: "Hombros", equip: "Máquina" },
-            { name: "Pájaros (Peck Deck Inverso)", muscle: "Hombros", equip: "Máquina" },
-            { name: "Press Bradford", muscle: "Hombros", equip: "Barra" },
-            { name: "Curl de Bíceps en Polea Baja", muscle: "Bíceps", equip: "Polea" },
-            { name: "Curl Bayesian", muscle: "Bíceps", equip: "Polea" },
-            { name: "Curl Zottman", muscle: "Bíceps", equip: "Mancuernas" },
-            { name: "Curl en Banco Inclinado", muscle: "Bíceps", equip: "Mancuernas" },
-            { name: "Press Francés (Mancuernas)", muscle: "Tríceps", equip: "Mancuernas" },
-            { name: "Extensión Tríceps Tras Nuca (Polea)", muscle: "Tríceps", equip: "Polea" },
-            { name: "Extensión Tríceps Unilateral (Polea)", muscle: "Tríceps", equip: "Polea" },
-            { name: "Fondos entre Bancos", muscle: "Tríceps", equip: "Peso Corporal" },
-            { name: "Elevación de Piernas Tumbado", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Crunch Abdominal en Máquina", muscle: "Abdomen", equip: "Máquina" },
-            { name: "Plancha Lateral", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Paseo del Granjero", muscle: "Abdomen", equip: "Mancuernas" },
-            { name: "Woodchopper (Leñador en Polea)", muscle: "Abdomen", equip: "Polea" },
-            { name: "V-Ups (Abdominales en V)", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Toes to Bar (Pies a la Barra)", muscle: "Abdomen", equip: "Peso Corporal" }
+            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." }
         ];
 
         let audioCtx = null;
@@ -607,12 +522,14 @@
                 const types = ['N', 'W', 'D'];
                 const current = localSets[index].type || 'N';
                 const next = types[(types.indexOf(current) + 1) % types.length];
-                updateSetLocal(index, 'type', next);
-                handleSetBlur();
+                const newSets = structuredClone(localSets);
+                newSets[index].type = next;
+                setLocalSets(newSets);
+                onSaveProgress(newSets, localNote);
             };
 
             const adjustWeight = (index, amount) => {
-                const currentVal = parseFloat(localSets[index].weight);
+                const currentVal = parseFloat(localSets[index].weight.toString().replace(',', '.'));
                 let newVal = isNaN(currentVal) ? (amount > 0 ? 2.5 : 0) : Math.max(0, currentVal + amount);
                 const updatedSets = structuredClone(localSets);
                 updatedSets[index].weight = newVal === 0 ? '' : newVal.toString();
@@ -729,7 +646,7 @@
 
                         return (
                             <div key={i} className="grid grid-cols-[36px_55px_1fr_70px_50px_42px] gap-1 items-center mb-2.5">
-                                <button onClick={() => cycleSetType(i)} className={`w-9 h-10 flex items-center justify-center rounded-xl font-black text-xs border cursor-pointer hover:opacity-80 transition-opacity ${badgeStyle}`}>
+                                <button type="button" onClick={() => cycleSetType(i)} className={`w-9 h-10 flex items-center justify-center rounded-xl font-black text-xs border cursor-pointer hover:opacity-80 transition-opacity ${badgeStyle}`}>
                                     {badgeText}
                                 </button>
                                 
@@ -769,13 +686,13 @@
                                     onBlur={handleSetBlur}
                                 />
                                 
-                                <button onClick={() => toggleDone(i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
+                                <button type="button" onClick={() => toggleDone(i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
                                     <i className="fa-solid fa-check"></i>
                                 </button>
                             </div>
                         )
                     })}
-                    <button onClick={addSet} className="w-full mt-4 bg-dark-800 text-brand-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
+                    <button type="button" onClick={addSet} className="w-full mt-4 bg-dark-800 text-brand-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
                         + Añadir serie {isUni ? 'I/D' : ''}
                     </button>
                 </div>
