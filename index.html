@@ -471,10 +471,10 @@
                             />
                         </div>
                         <div className="flex items-center gap-1">
-                            {!isFirst && <button onClick={onMoveUp} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover arriba"><i className="fa-solid fa-arrow-up"></i></button>}
-                            {!isLast && <button onClick={onMoveDown} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover abajo"><i className="fa-solid fa-arrow-down"></i></button>}
-                            <button onClick={() => setShowInfoModal(true)} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1" title="Información"><i className="fa-solid fa-circle-info text-lg"></i></button>
-                            <button onClick={onDelete} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
+                            {!isFirst && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover arriba"><i className="fa-solid fa-arrow-up"></i></button>}
+                            {!isLast && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover abajo"><i className="fa-solid fa-arrow-down"></i></button>}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1" title="Información"><i className="fa-solid fa-circle-info text-lg"></i></button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
 
@@ -913,7 +913,6 @@
                 setPinInput('');
             };
 
-            /* NUEVO: Acciones de Gestión de Clientes para el Profesor */
             const addClient = () => {
                 if (!newClientName.trim()) return;
                 const newPin = Math.floor(1000 + Math.random() * 9000).toString();
@@ -994,7 +993,7 @@
                     const clonedSections = (dayToClone.sections || [{ name: 'Bloque Principal', exercises: dayToClone.exercises || [] }]).map(sec => ({
                         ...sec,
                         id: Math.random().toString(36).substr(2, 9),
-                        exercises: sec.exercises.map(ex => ({
+                        exercises: (sec.exercises || []).map(ex => ({
                             ...ex,
                             id: Math.random().toString(36).substr(2, 9)
                         }))
@@ -1015,7 +1014,10 @@
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
                     if(!day) return;
-                    if(!day.sections) day.sections = [];
+                    if(!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
                     day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Nuevo Bloque', exercises: [] });
                 });
             };
@@ -1023,17 +1025,23 @@
             const updateSectionName = (clientId, dayId, secId, newName) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    const sec = day?.sections?.find(s => s.id === secId);
-                    if(sec) sec.name = newName;
+                    if (!day) return;
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: newName, exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    } else {
+                        const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                        if(sec) sec.name = newName;
+                    }
                 });
             };
 
             const deleteSection = (clientId, dayId, secId) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    if(day && day.sections) {
-                        day.sections = day.sections.filter(s => s.id !== secId);
-                    }
+                    if (!day) return;
+                    if (!day.sections) return;
+                    day.sections = day.sections.filter(s => s.id !== secId);
                 });
             };
 
@@ -1050,8 +1058,14 @@
                 
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    const sec = day?.sections?.find(s => s.id === secId);
+                    if (!day) return;
                     
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+                    
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
                     if (sec && sec.exercises) {
                         sec.exercises.push({ 
                             id: Math.random().toString(36).substr(2, 9), 
@@ -1071,8 +1085,16 @@
             const updateExerciseInSection = (clientId, dayId, secId, updatedExercise) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    const sec = day?.sections?.find(s => s.id === secId);
-                    if (!sec) return;
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
+                    if (!sec || !sec.exercises) return;
+                    
                     const index = sec.exercises.findIndex(e => e.id === updatedExercise.id);
                     if(index !== -1) sec.exercises[index] = updatedExercise;
                 });
@@ -1081,18 +1103,31 @@
             const deleteExerciseFromSection = (clientId, dayId, secId, exerciseId) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    const sec = day?.sections?.find(s => s.id === secId);
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
                     if(sec && sec.exercises) {
                         sec.exercises = sec.exercises.filter(e => e.id !== exerciseId);
                     }
                 });
             };
 
-            /* NUEVO: Mover ejercicios arriba/abajo (Crucial para Entrenadores) */
             const moveExercise = (clientId, dayId, secId, exerciseIndex, direction) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    const sec = day?.sections?.find(s => s.id === secId);
+                    if (!day) return;
+
+                    if (!day.sections) {
+                        day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+                        delete day.exercises;
+                    }
+
+                    const sec = day.sections.find(s => s.id === secId) || day.sections[0];
                     if(!sec || !sec.exercises) return;
 
                     const newIndex = exerciseIndex + direction;
