@@ -973,7 +973,7 @@
             const addClient = () => {
                 if (!newClientName.trim()) return;
                 const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-                const newClient = { id: Date.now().toString(), name: newClientName, pin: newPin };
+                const newClient = { id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), name: newClientName, pin: newPin };
                 
                 mutateAndSave((freshData) => {
                     if(!freshData.clients) freshData.clients = [];
@@ -992,8 +992,9 @@
                     mutateAndSave((freshData) => {
                         freshData.clients = freshData.clients.filter(c => c.id !== clientId);
                         delete freshData.routines[clientId];
-                        delete freshData.progress[clientId];
+                        if (freshData.progress) delete freshData.progress[clientId];
                     });
+                    setActiveClient(null);
                     showToast('Alumno eliminado correctamente.');
                 }
             };
@@ -1013,7 +1014,7 @@
                 mutateAndSave((freshData) => {
                     if(!freshData.routines[clientId]) freshData.routines[clientId] = [];
                     freshData.routines[clientId].push({ 
-                        id: Date.now().toString(), 
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), 
                         name: "Nueva Plantilla", 
                         sections: [ { id: Math.random().toString(36).substr(2, 9), name: 'Bloque Principal', exercises: [] } ] 
                     });
@@ -1056,7 +1057,7 @@
                     }));
 
                     const newDay = {
-                        id: Date.now().toString(),
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
                         name: dayToClone.name + " (Copia)",
                         sections: clonedSections
                     };
@@ -1081,7 +1082,7 @@
                     }));
 
                     const newDay = {
-                        id: Date.now().toString(),
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
                         name: dayToClone.name,
                         sections: clonedSections
                     };
@@ -1122,9 +1123,14 @@
             const deleteSection = (clientId, dayId, secId) => {
                 mutateAndSave((freshData) => {
                     const day = freshData.routines[clientId]?.find(d => d.id === dayId);
-                    if (!day) return;
-                    if (!day.sections) return;
+                    if (!day || !day.sections) return;
+                    
                     day.sections = day.sections.filter(s => s.id !== secId);
+                    
+                    // Bug Fix: Si borran todos los bloques, creo uno vacío por defecto para que no se rompa la UI
+                    if(day.sections.length === 0) {
+                        day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Bloque Principal', exercises: [] });
+                    }
                 });
             };
 
@@ -1160,6 +1166,17 @@
                             link: '',
                             sets: '4', reps: '10', rir: '2', rest: '90s', isUnilateral: false, weeks: {} 
                         });
+                    } else if (sec) {
+                        sec.exercises = [{
+                            id: Math.random().toString(36).substr(2, 9), 
+                            name: exerciseName,
+                            image: imageUrl, 
+                            description: description,
+                            muscle: muscle,
+                            equip: equip,
+                            link: '',
+                            sets: '4', reps: '10', rir: '2', rest: '90s', isUnilateral: false, weeks: {} 
+                        }];
                     }
                 });
                 setCatalogTarget(null);
