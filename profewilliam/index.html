@@ -557,7 +557,8 @@
                 onSaveProgress(localSetsRef.current, localNoteRef.current); 
             };
 
-            const toggleDone = (index) => {
+            const toggleDone = (e, index) => {
+                e.stopPropagation();
                 unlockAudio();
                 const newSets = [...localSetsRef.current];
                 const wasDone = newSets[index].done;
@@ -584,7 +585,10 @@
                 onSaveProgress(newSets, localNoteRef.current);
             };
 
-            const cycleSetType = (index) => {
+            // AISLAMIENTO DE EVENTOS BLINDADO CONTRA CONFLICTOS
+            const cycleSetType = (e, index) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const types = ['N', 'W', 'D'];
                 const current = localSetsRef.current[index].type || 'N';
                 const next = types[(types.indexOf(current) + 1) % types.length];
@@ -598,7 +602,9 @@
                 else showToast('Serie Normal', 'info');
             };
 
-            const adjustWeight = (index, amount) => {
+            const adjustWeight = (e, index, amount) => {
+                e.preventDefault();
+                e.stopPropagation();
                 let currentStr = localSetsRef.current[index].weight || '';
                 currentStr = currentStr.toString().replace(',', '.');
                 let currentVal = parseFloat(currentStr);
@@ -722,7 +728,7 @@
 
                         return (
                             <div key={i} className="grid grid-cols-[36px_55px_1fr_70px_50px_42px] gap-1 items-center mb-2.5">
-                                <button type="button" onClick={() => cycleSetType(i)} className={`w-9 h-10 flex items-center justify-center rounded-xl font-black text-xs border cursor-pointer hover:opacity-80 transition-opacity ${badgeStyle}`}>
+                                <button type="button" onClick={(e) => cycleSetType(e, i)} className={`w-9 h-10 flex items-center justify-center rounded-xl font-black text-xs border cursor-pointer hover:opacity-80 transition-opacity ${badgeStyle}`}>
                                     {badgeText}
                                 </button>
                                 
@@ -731,7 +737,7 @@
                                 </div>
 
                                 <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600 focus-within:border-brand-500 overflow-hidden shadow-inner">
-                                    <button type="button" onClick={() => adjustWeight(i, -2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">-</button>
+                                    <button type="button" onClick={(e) => adjustWeight(e, i, -2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">-</button>
                                     <input 
                                         type="text" 
                                         inputMode="decimal"
@@ -741,7 +747,7 @@
                                         onChange={(e) => updateSetLocal(i, 'weight', e.target.value)} 
                                         onBlur={handleSetBlur}
                                     />
-                                    <button type="button" onClick={() => adjustWeight(i, 2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">+</button>
+                                    <button type="button" onClick={(e) => adjustWeight(e, i, 2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center">+</button>
                                 </div>
                                 
                                 <input 
@@ -762,7 +768,7 @@
                                     onBlur={handleSetBlur}
                                 />
                                 
-                                <button type="button" onClick={() => toggleDone(i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
+                                <button type="button" onClick={(e) => toggleDone(e, i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
                                     <i className="fa-solid fa-check"></i>
                                 </button>
                             </div>
@@ -793,7 +799,7 @@
             const [restTimerKey, setRestTimerKey] = useState(0); 
             
             const [catalogTarget, setCatalogTarget] = useState(null);
-            const [transferTarget, setTransferTarget] = useState(null); // NUEVO ESTADO PARA CLONACIÓN CRUZADA
+            const [transferTarget, setTransferTarget] = useState(null);
 
             const [toast, setToast] = useState(null);
             
@@ -871,7 +877,6 @@
                 return () => clearInterval(restInterval);
             }, [restTime > 0, restTimerKey]);
 
-            // Wake Lock API para que no se apague la pantalla entrenando
             useEffect(() => {
                 let wakeLock = null;
                 const requestWakeLock = async () => {
@@ -1059,7 +1064,6 @@
                 showToast('Plantilla duplicada con éxito');
             };
 
-            // NUEVA FUNCIÓN: TRANSFERIR PLANTILLA A OTRO ALUMNO
             const transferDayToClient = (sourceClientId, targetClientId, dayId) => {
                 mutateAndSave((freshData) => {
                     const dayToClone = freshData.routines[sourceClientId]?.find(d => d.id === dayId);
@@ -1241,7 +1245,6 @@
                         />
                     )}
 
-                    {/* MODAL PARA TRANSFERENCIA DE PLANTILLAS */}
                     {transferTarget && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setTransferTarget(null)}>
                             <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -1479,7 +1482,6 @@
                                                                 <p className="text-xs text-gray-400 truncate mt-0.5">{totalEx} ejercicios programados</p>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                {/* NUEVO BOTÓN DE TRANSFERENCIA */}
                                                                 <button onClick={(e) => { e.stopPropagation(); setTransferTarget({ sourceClientId: activeClient.id, dayId: day.id }); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Transferir a otro alumno"><i className="fa-solid fa-share-nodes"></i></button>
                                                                 <button onClick={(e) => { e.stopPropagation(); cloneDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Duplicar"><i className="fa-solid fa-copy"></i></button>
                                                                 <button onClick={(e) => { e.stopPropagation(); deleteDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-red-400 transition-colors" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
