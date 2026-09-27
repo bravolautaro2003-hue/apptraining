@@ -672,6 +672,46 @@
                 mutateAndSave((freshData) => { freshData[key] = value; });
             };
 
+            // Funciones de gestión de alumnos restauradas
+            const addClient = () => {
+                if (!newClientName.trim()) return;
+                const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+                const newClient = { id: Date.now().toString(), name: newClientName, pin: newPin };
+                
+                mutateAndSave((freshData) => {
+                    if(!freshData.clients) freshData.clients = [];
+                    if(!freshData.routines) freshData.routines = {};
+                    if(!freshData.progress) freshData.progress = {};
+                    freshData.clients.push(newClient);
+                    freshData.routines[newClient.id] = [];
+                });
+                
+                setNewClientName('');
+                showToast(`¡Alumno creado! PIN: ${newPin}`);
+            };
+
+            const deleteClient = (clientId) => {
+                if(window.confirm('¿Seguro que querés eliminar a este alumno y TODAS sus rutinas?')) {
+                    mutateAndSave((freshData) => {
+                        freshData.clients = freshData.clients.filter(c => c.id !== clientId);
+                        delete freshData.routines[clientId];
+                        delete freshData.progress[clientId];
+                    });
+                    showToast('Alumno eliminado correctamente.');
+                }
+            };
+
+            const editClientName = (clientId, oldName) => {
+                const newName = window.prompt('Nuevo nombre del alumno:', oldName);
+                if(newName && newName.trim() !== '' && newName !== oldName) {
+                    mutateAndSave((freshData) => {
+                        const client = freshData.clients.find(c => c.id === clientId);
+                        if(client) client.name = newName;
+                    });
+                    showToast('Nombre actualizado.');
+                }
+            };
+
             useEffect(() => {
                 fetchData();
                 const channel = supabase.channel(`realtime_${CLIENTE_ID}`).on('postgres_changes', { event: '*', schema: 'public', table: 'bravo_state' }, (payload) => {
@@ -807,12 +847,37 @@
                                 <h2 className="font-black text-xl text-white uppercase">Panel Profe</h2>
                                 <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl">Salir</button>
                             </header>
-                            <div className="p-5">
-                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2">Alumnos</h3>
+                            
+                            <div className="p-5 space-y-4">
+                                {/* Formulario para agregar alumnos restaurado */}
+                                <div className="flex gap-2 bg-dark-800/80 p-2 rounded-2xl border border-white/5 shadow-inner mb-6">
+                                    <input 
+                                        className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" 
+                                        placeholder="Nombre del nuevo alumno..." 
+                                        value={newClientName} 
+                                        onChange={(e) => setNewClientName(e.target.value)} 
+                                    />
+                                    <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md font-bold">
+                                        <i className="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+
+                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2">Listado de Alumnos</h3>
+                                
+                                {globalData.clients?.length === 0 && (
+                                    <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                )}
+
                                 {(globalData.clients || []).map(client => (
-                                    <div key={client.id} onClick={() => setActiveClient(client)} className="glass-panel p-4 rounded-2xl flex justify-between items-center mb-3 cursor-pointer">
-                                        <p className="font-bold text-base text-white">{client.name}</p>
-                                        <span className="text-xs text-brand-500">PIN: {client.pin}</span>
+                                    <div key={client.id} className="glass-panel p-4 rounded-2xl flex justify-between items-center mb-3 border border-white/5">
+                                        <div className="flex-1 cursor-pointer" onClick={() => { setActiveClient(client); setActiveDayId(null); }}>
+                                            <p className="font-bold text-base text-white">{client.name}</p>
+                                            <p className="text-xs text-brand-500 mt-1 font-semibold">PIN: {client.pin} • <span className="text-gray-400">{(globalData.routines[client.id] || []).length} rutinas</span></p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <button onClick={() => editClientName(client.id, client.name)} className="text-gray-400 hover:text-brand-500 p-2" title="Editar Nombre"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={() => deleteClient(client.id)} className="text-gray-400 hover:text-red-500 p-2" title="Eliminar Alumno"><i className="fa-solid fa-trash-can"></i></button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
