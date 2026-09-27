@@ -103,7 +103,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // ID DEL CLIENTE
         const CLIENTE_ID = 'profe_william';
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
@@ -111,7 +110,6 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const EXERCISE_CATALOG = [
-            // BLOQUE 1
             { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
             { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
             { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
@@ -144,8 +142,6 @@
             { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido para enfocar en tríceps (o inclinado para pecho). Bajá hasta los 90 grados de codo y empujá verticalmente." },
             { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo contrayendo el abdomen. Movimiento corto enfocado en el core, sin tirar del cuello." },
             { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
-            
-            // BLOQUE 2 
             { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran enfoque en cuádriceps." },
             { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "De pie, un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
             { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." },
@@ -523,13 +519,18 @@
             const localSetsRef = useRef(localSets);
             const localNoteRef = useRef(localNote);
 
-            useEffect(() => {
-                localSetsRef.current = localSets;
-            }, [localSets]);
+            // FUNCIÓN MAESTRA BLINDADA PARA SINCRONIZACIÓN INSTANTÁNEA
+            const commitSets = (newSets) => {
+                localSetsRef.current = newSets;
+                setLocalSets(newSets);
+                onSaveProgress(newSets, localNoteRef.current);
+            };
 
-            useEffect(() => {
-                localNoteRef.current = localNote;
-            }, [localNote]);
+            const commitNote = (newNote) => {
+                localNoteRef.current = newNote;
+                setLocalNote(newNote);
+                onSaveProgress(localSetsRef.current, newNote);
+            };
 
             useEffect(() => {
                 const saved = progressData?.sets || [];
@@ -544,12 +545,15 @@
                 }
 
                 setLocalSets(newSets);
+                localSetsRef.current = newSets; // Sincronización manual anti-lag
                 setLocalNote(progressData?.note || '');
+                localNoteRef.current = progressData?.note || '';
             }, [progressData, totalRows, activeWeek]);
 
             const updateSetLocal = (index, field, value) => {
                 const newSets = [...localSetsRef.current];
                 newSets[index] = { ...newSets[index], [field]: value };
+                localSetsRef.current = newSets; // Instántaneo para que onBlur no lea data vieja
                 setLocalSets(newSets);
             };
 
@@ -558,19 +562,21 @@
             };
 
             const toggleDone = (e, index) => {
+                e.preventDefault();
                 e.stopPropagation();
                 unlockAudio();
                 const newSets = [...localSetsRef.current];
                 const wasDone = newSets[index].done;
                 newSets[index] = { ...newSets[index], done: !wasDone };
-                setLocalSets(newSets);
-                onSaveProgress(newSets, localNoteRef.current);
+                commitSets(newSets);
                 if (!wasDone) onStartRest(exercise.rest || '90s');
             };
 
             const handleNoteChange = (e) => { 
+                localNoteRef.current = e.target.value;
                 setLocalNote(e.target.value); 
             };
+            
             const handleNoteBlur = () => { 
                 onSaveProgress(localSetsRef.current, localNoteRef.current); 
             };
@@ -581,11 +587,10 @@
                 for(let i=0; i<addCount; i++){
                     newSets.push({ weight: '', reps: '', rir: '', done: false, type: 'N' });
                 }
-                setLocalSets(newSets);
-                onSaveProgress(newSets, localNoteRef.current);
+                commitSets(newSets);
             };
 
-            // AISLAMIENTO DE EVENTOS BLINDADO CONTRA CONFLICTOS
+            // BLINDADO: Lee la referencia más nueva de memoria instantáneamente
             const cycleSetType = (e, index) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -594,14 +599,15 @@
                 const next = types[(types.indexOf(current) + 1) % types.length];
                 const newSets = [...localSetsRef.current];
                 newSets[index] = { ...newSets[index], type: next };
-                setLocalSets(newSets);
-                onSaveProgress(newSets, localNoteRef.current);
+                
+                commitSets(newSets);
                 
                 if (next === 'W') showToast('Warm-up (W): Serie de calentamiento', 'info');
                 else if (next === 'D') showToast('Drop-set (D): Serie al fallo o descendente', 'info');
                 else showToast('Serie Normal', 'info');
             };
 
+            // BLINDADO: Lee y muta la referencia correcta sin pisar la letra (type)
             const adjustWeight = (e, index, amount) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -615,8 +621,8 @@
                 
                 const newSets = [...localSetsRef.current];
                 newSets[index] = { ...newSets[index], weight: finalStr };
-                setLocalSets(newSets);
-                onSaveProgress(newSets, localNoteRef.current);
+                
+                commitSets(newSets);
             };
 
             return (
@@ -814,26 +820,36 @@
                 setView('home');
             };
 
+            // BLINDADO: Estado Funcional Anti Race-Conditions
             const mutateAndSave = async (mutationCallback) => {
-                if (!globalData) return;
+                let optimisticDataForDB;
                 
-                const optimisticData = structuredClone(globalData);
-                mutationCallback(optimisticData);
-                setGlobalData(optimisticData);
+                // 1. Mutación segura usando el estado más actual en la cola de React
+                setGlobalData(prev => {
+                    if (!prev) return prev;
+                    const cloned = structuredClone(prev);
+                    mutationCallback(cloned);
+                    optimisticDataForDB = cloned;
+                    return cloned;
+                });
 
-                try {
-                    const { data: latest } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                    let freshData = optimisticData;
-                    
-                    if (latest && latest.data) {
-                        freshData = latest.data;
-                        mutationCallback(freshData);
+                // Evitamos trancar la interfaz dejando el guardado en red en la cola asíncrona
+                setTimeout(async () => {
+                    if (!optimisticDataForDB) return;
+                    try {
+                        const { data: latest } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
+                        let freshData = optimisticDataForDB;
+                        
+                        if (latest && latest.data) {
+                            freshData = latest.data;
+                            mutationCallback(freshData); // Re-aplica sobre datos frescos de DB
+                        }
+                        
+                        await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: freshData });
+                    } catch (e) {
+                        console.error("Error de sincronización:", e);
                     }
-                    
-                    await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: freshData });
-                } catch (e) {
-                    console.error("Error de sincronización (Modo Optimista Activo):", e);
-                }
+                }, 0);
             };
 
             const updateAppSetting = (key, value) => {
