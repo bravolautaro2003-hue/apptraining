@@ -19,9 +19,30 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 
     <script>
+        // PWA - CACHÉ AGRESIVO OFFLINE PURO
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) { registration.unregister(); }
+            const swCode = `
+                const CACHE_NAME = 'panel-pro-offline-v1';
+                self.addEventListener('install', (e) => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('fetch', (e) => {
+                    if (e.request.method !== 'GET') return;
+                    e.respondWith(
+                        fetch(e.request).then((response) => {
+                            const clone = response.clone();
+                            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+                            return response;
+                        }).catch(() => caches.match(e.request))
+                    );
+                });
+            `;
+            const blob = new Blob([swCode], {type: 'application/javascript'});
+            const swUrl = URL.createObjectURL(blob);
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl)
+                    .then(() => console.log('PWA: Modo Offline Agresivo Activado'))
+                    .catch(() => console.log('SW bypass normal en algunos entornos de desarrollo'));
             });
         }
 
@@ -82,7 +103,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // ID DEL CLIENTE (Cambiá esto para cada profesor que te compre la app)
+        // ID DEL CLIENTE
         const CLIENTE_ID = 'profe_william';
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
@@ -90,47 +111,63 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const EXERCISE_CATALOG = [
+            // BLOQUE 1
             { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
             { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
             { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
             { name: "Sentadilla A Una Pierna Asistida", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Usá un soporte (TRX, poste) para equilibrarte. Bajá con una sola pierna manteniendo el talón firme. Gran trabajo de estabilización." },
             { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Empuje vertical." },
-            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra" },
+            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros o ligeramente más abiertos. Descenso profundo controlando la fase excéntrica y manteniendo el torso firme." },
             { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo al suelo. Mantené el torso firme." },
             { name: "Peso Muerto Rumano", muscle: "Isquiosurales", equip: "Barra", description: "Flexión leve de rodillas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas." },
-            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra" },
-            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina" },
-            { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina" },
+            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo durante todo el recorrido." },
+            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso en la fase excéntrica (bajada controlada)." },
+            { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina", description: "Cadera firme contra el banco. Flexioná llevando el rodillo hacia los glúteos y volvé lentamente sin soltar la tensión de golpe." },
             { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. No arquees la zona lumbar." },
-            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina" },
+            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos en la plataforma. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción." },
             { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Mantené los pies firmes en el suelo." },
-            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas" },
-            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas" },
-            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea" },
-            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas." },
-            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea" },
-            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción." },
-            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea" },
+            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas", description: "Banco a 30-45°. Retracción escapular. Bajá las mancuernas hasta la altura del pecho superior y empujá en un ligero arco hacia el centro." },
+            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No conviertas el movimiento en un press." },
+            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo, cruzando levemente las manos al final para máxima contracción del pectoral." },
+            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." },
+            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, apuntando los codos hacia abajo y atrás." },
+            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción. Mantené la zona lumbar neutra." },
+            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea", description: "Sentado, rodillas levemente flexionadas. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás." },
             { name: "Press Militar", muscle: "Hombros", equip: "Barra", description: "De pie o sentado. Empujá la barra verticalmente sin usar impulso de las piernas. Contraé abdomen para proteger la lumbar." },
-            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba." },
-            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas" },
+            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Movimiento estricto." },
+            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados enfocando el esfuerzo en la parte posterior del hombro y trapecio." },
             { name: "Curl de Bíceps", muscle: "Bíceps", equip: "Mancuernas", description: "Mantené los codos fijos a los costados del cuerpo. Subí contrayendo el bíceps y bajá de forma controlada (fase excéntrica)." },
-            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas" },
-            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra" },
-            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea" },
-            { name: "Press Francés", muscle: "Tríceps", equip: "Barra" },
-            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal" },
-            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal" },
-            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." }
+            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose). Subí manteniendo el codo fijo, ideal para trabajar el braquial y antebrazo junto al bíceps." },
+            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra", description: "Agarre cómodo en la curvatura de la barra. Evitá balanceos con el torso. Máxima tensión en el ascenso y retención en el descenso." },
+            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo contrayendo el tríceps. Subí hasta que el antebrazo pase los 90 grados." },
+            { name: "Press Francés", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo los codos. Extensión completa arriba." },
+            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido para enfocar en tríceps (o inclinado para pecho). Bajá hasta los 90 grados de codo y empujá verticalmente." },
+            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo contrayendo el abdomen. Movimiento corto enfocado en el core, sin tirar del cuello." },
+            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
+            
+            // BLOQUE 2 
+            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran enfoque en cuádriceps." },
+            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "De pie, un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
+            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." },
+            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás, reteniendo en la subida." },
+            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea", description: "Tobillera puesta. Torso firme. Extensión de cadera hacia atrás contrayendo el glúteo en el punto máximo. No uses la zona lumbar." },
+            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." },
+            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina", description: "Pecho apoyado (o de pie inclinado). Traccioná llevando los codos hacia atrás y arriba, maximizando el grosor de la espalda." },
+            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Gran recorrido articular." },
+            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda. Traccioná hacia tu cara separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para postura y hombro posterior." },
+            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps eliminando cualquier balanceo. No extiendas el codo al 100% abajo por seguridad." },
+            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro y la cadera retrovertida. Volvé usando la fuerza del core." }
         ];
 
         let audioCtx = null;
         const unlockAudio = () => {
             if (!audioCtx) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
             }
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         };
 
         document.addEventListener('touchstart', unlockAudio, { once: true });
@@ -139,6 +176,7 @@
         const playAlarm = () => {
             try {
                 if (!audioCtx) unlockAudio();
+                if (!audioCtx) return;
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
@@ -171,7 +209,7 @@
                         <h2 className="text-white font-bold text-lg">Añadir Ejercicio</h2>
                         <button onClick={() => {
                             const customName = prompt("Nombre del ejercicio personalizado:");
-                            if(customName) onSelect(customName);
+                            if(customName && customName.trim() !== '') onSelect(customName.trim());
                         }} className="text-brand-blue font-semibold text-base pr-2">Crear</button>
                     </header>
 
@@ -312,6 +350,17 @@
                             )}
                         </div>
 
+                        {!isTeacher && (
+                            <div className="mt-4 bg-dark-800 rounded-2xl p-4 border border-white/5">
+                                <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3"><i className="fa-solid fa-list-ol text-brand-500 mr-1.5"></i> Leyenda de Series</h4>
+                                <div className="flex flex-col gap-2.5 text-xs text-gray-300">
+                                    <div className="flex items-center gap-2"><span className="w-7 h-7 flex items-center justify-center bg-dark-700 text-gray-300 font-bold rounded-lg border border-dark-600 shrink-0">N</span> <span><strong>Serie Normal:</strong> Serie de trabajo efectiva.</span></div>
+                                    <div className="flex items-center gap-2"><span className="w-7 h-7 flex items-center justify-center bg-orange-950/60 text-orange-400 font-bold rounded-lg border border-orange-800 shrink-0">W</span> <span><strong>Warm-up (Calentamiento):</strong> Serie de aproximación, no cuenta como efectiva.</span></div>
+                                    <div className="flex items-center gap-2"><span className="w-7 h-7 flex items-center justify-center bg-red-950/60 text-red-400 font-bold rounded-lg border border-red-800 shrink-0">D</span> <span><strong>Drop-set (Al fallo):</strong> Serie descendente o llevada al máximo esfuerzo.</span></div>
+                                </div>
+                            </div>
+                        )}
+
                         {isTeacher && (
                             <button onClick={handleSave} className="w-full mt-6 bg-brand-500 text-white font-bold py-3.5 rounded-xl border border-brand-500 shadow-lg shadow-brand-500/30 hover:bg-brand-600 transition-colors">Guardar Ficha</button>
                         )}
@@ -351,9 +400,7 @@
             };
             
             const handleBlur = () => {
-                setTimeout(() => {
-                    onUpdate(localExRef.current);
-                }, 150);
+                onUpdate(localExRef.current);
             };
 
             const currentWeekData = localEx.weeks?.[editWeek] || { sets: localEx.sets || '4', reps: localEx.reps || '10' };
@@ -469,72 +516,101 @@
             const [showNotes, setShowNotes] = useState(false);
             const [showHistory, setShowHistory] = useState(false);
             const [showInfoModal, setShowInfoModal] = useState(false);
+            
             const [localNote, setLocalNote] = useState(progressData?.note || '');
+            const [localSets, setLocalSets] = useState([]);
 
-            const [localSets, setLocalSets] = useState(() => {
-                const saved = progressData?.sets;
-                if (saved && saved.length > 0) return saved;
-                return Array.from({length: totalRows}, () => ({ weight: '', reps: '', rir: '', done: false, type: 'N' }));
-            });
+            const localSetsRef = useRef(localSets);
+            const localNoteRef = useRef(localNote);
 
             useEffect(() => {
-                const saved = progressData?.sets;
-                if (saved && saved.length > 0) {
-                    setLocalSets(saved);
-                } else {
-                    setLocalSets(Array.from({length: totalRows}, () => ({ weight: '', reps: '', rir: '', done: false, type: 'N' })));
+                localSetsRef.current = localSets;
+            }, [localSets]);
+
+            useEffect(() => {
+                localNoteRef.current = localNote;
+            }, [localNote]);
+
+            useEffect(() => {
+                const saved = progressData?.sets || [];
+                let newSets = [...saved];
+                
+                if (newSets.length < totalRows) {
+                    for (let i = newSets.length; i < totalRows; i++) {
+                        newSets.push({ weight: '', reps: '', rir: '', done: false, type: 'N' });
+                    }
+                } else if (newSets.length > totalRows) {
+                    newSets = newSets.slice(0, totalRows);
                 }
+
+                setLocalSets(newSets);
                 setLocalNote(progressData?.note || '');
             }, [progressData, totalRows, activeWeek]);
 
             const updateSetLocal = (index, field, value) => {
-                const newSets = structuredClone(localSets);
-                newSets[index][field] = value;
+                const newSets = [...localSetsRef.current];
+                newSets[index] = { ...newSets[index], [field]: value };
                 setLocalSets(newSets);
             };
 
-            const handleSetBlur = () => { onSaveProgress(localSets, localNote); };
+            const handleSetBlur = () => { 
+                onSaveProgress(localSetsRef.current, localNoteRef.current); 
+            };
 
             const toggleDone = (index) => {
                 unlockAudio();
-                const newSets = structuredClone(localSets);
+                const newSets = [...localSetsRef.current];
                 const wasDone = newSets[index].done;
-                newSets[index].done = !wasDone;
+                newSets[index] = { ...newSets[index], done: !wasDone };
                 setLocalSets(newSets);
-                onSaveProgress(newSets, localNote);
+                onSaveProgress(newSets, localNoteRef.current);
                 if (!wasDone) onStartRest(exercise.rest || '90s');
             };
 
-            const handleNoteChange = (e) => { setLocalNote(e.target.value); };
-            const handleNoteBlur = () => { onSaveProgress(localSets, localNote); };
+            const handleNoteChange = (e) => { 
+                setLocalNote(e.target.value); 
+            };
+            const handleNoteBlur = () => { 
+                onSaveProgress(localSetsRef.current, localNoteRef.current); 
+            };
 
             const addSet = () => {
                 const addCount = isUni ? 2 : 1;
-                const newSets = structuredClone(localSets);
+                const newSets = [...localSetsRef.current];
                 for(let i=0; i<addCount; i++){
                     newSets.push({ weight: '', reps: '', rir: '', done: false, type: 'N' });
                 }
                 setLocalSets(newSets);
-                onSaveProgress(newSets, localNote);
+                onSaveProgress(newSets, localNoteRef.current);
             };
 
             const cycleSetType = (index) => {
                 const types = ['N', 'W', 'D'];
-                const current = localSets[index].type || 'N';
+                const current = localSetsRef.current[index].type || 'N';
                 const next = types[(types.indexOf(current) + 1) % types.length];
-                const newSets = structuredClone(localSets);
-                newSets[index].type = next;
+                const newSets = [...localSetsRef.current];
+                newSets[index] = { ...newSets[index], type: next };
                 setLocalSets(newSets);
-                onSaveProgress(newSets, localNote);
+                onSaveProgress(newSets, localNoteRef.current);
+                
+                if (next === 'W') showToast('Warm-up (W): Serie de calentamiento', 'info');
+                else if (next === 'D') showToast('Drop-set (D): Serie al fallo o descendente', 'info');
+                else showToast('Serie Normal', 'info');
             };
 
             const adjustWeight = (index, amount) => {
-                const currentVal = parseFloat(localSets[index].weight.toString().replace(',', '.'));
-                let newVal = isNaN(currentVal) ? (amount > 0 ? 2.5 : 0) : Math.max(0, currentVal + amount);
-                const updatedSets = structuredClone(localSets);
-                updatedSets[index].weight = newVal === 0 ? '' : newVal.toString();
-                setLocalSets(updatedSets);
-                onSaveProgress(updatedSets, localNote);
+                let currentStr = localSetsRef.current[index].weight || '';
+                currentStr = currentStr.toString().replace(',', '.');
+                let currentVal = parseFloat(currentStr);
+                if (isNaN(currentVal)) currentVal = 0;
+                
+                let newVal = Math.max(0, currentVal + amount);
+                let finalStr = newVal === 0 ? '' : newVal.toString();
+                
+                const newSets = [...localSetsRef.current];
+                newSets[index] = { ...newSets[index], weight: finalStr };
+                setLocalSets(newSets);
+                onSaveProgress(newSets, localNoteRef.current);
             };
 
             return (
@@ -717,11 +793,19 @@
             const [restTimerKey, setRestTimerKey] = useState(0); 
             
             const [catalogTarget, setCatalogTarget] = useState(null);
+            const [transferTarget, setTransferTarget] = useState(null); // NUEVO ESTADO PARA CLONACIÓN CRUZADA
 
             const [toast, setToast] = useState(null);
+            
             const showToast = (msg, type = 'info') => {
                 setToast({ msg, type });
                 setTimeout(() => setToast(null), 3000);
+            };
+
+            const logout = () => {
+                localStorage.removeItem(`bravo_session_${CLIENTE_ID}`);
+                setCurrentUser(null);
+                setView('home');
             };
 
             const mutateAndSave = async (mutationCallback) => {
@@ -742,7 +826,7 @@
                     
                     await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: freshData });
                 } catch (e) {
-                    console.error("Error de sincronización:", e);
+                    console.error("Error de sincronización (Modo Optimista Activo):", e);
                 }
             };
 
@@ -787,22 +871,40 @@
                 return () => clearInterval(restInterval);
             }, [restTime > 0, restTimerKey]);
 
+            // Wake Lock API para que no se apague la pantalla entrenando
+            useEffect(() => {
+                let wakeLock = null;
+                const requestWakeLock = async () => {
+                    try {
+                        if ('wakeLock' in navigator) {
+                            wakeLock = await navigator.wakeLock.request('screen');
+                        }
+                    } catch (err) {}
+                };
+                if (view === 'cliente_entrenamiento' && isTrainingStarted) {
+                    requestWakeLock();
+                }
+                return () => { 
+                    if (wakeLock) wakeLock.release().catch(()=>{}); 
+                };
+            }, [view, isTrainingStarted]);
+
             const startRest = (timeString) => {
-                let t = 0;
-                if (!timeString) { 
-                    t = 90; 
-                } else {
-                    let str = timeString.toLowerCase().trim();
+                let t = 90;
+                if (timeString) { 
+                    let str = timeString.toString().toLowerCase().trim();
                     if (str.includes(':')) {
                         const parts = str.split(':');
-                        t = parseInt(parts[0] || 0) * 60 + parseInt(parts[1] || 0);
+                        t = (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
                     } else if (str.includes('m')) {
-                        const parts = str.split('m');
-                        const m = parseInt(parts[0]) || 0;
-                        const s = parseInt(parts[1]) || 0; 
+                        const mMatch = str.match(/(\d+)\s*m/);
+                        const sMatch = str.match(/(\d+)\s*s/);
+                        const m = mMatch ? parseInt(mMatch[1]) : 0;
+                        const s = sMatch ? parseInt(sMatch[1]) : 0;
                         t = m * 60 + s;
                     } else {
-                        t = parseInt(str) || 90; 
+                        const parsed = parseInt(str.replace(/\D/g, ''));
+                        if(!isNaN(parsed)) t = parsed;
                     }
                 }
                 setRestTime(t);
@@ -818,10 +920,21 @@
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                    if (data && data.data) {
-                        setGlobalData(data.data);
-                    } else {
-                        setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} });
+                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} };
+                    setGlobalData(dbData);
+                    
+                    const savedSession = localStorage.getItem(`bravo_session_${CLIENTE_ID}`);
+                    if (savedSession) {
+                        const parsed = JSON.parse(savedSession);
+                        if (parsed.type === 'profesor' && parsed.pin === (dbData.profesorPin || '0000')) {
+                            setView('profesor');
+                        } else if (parsed.type === 'cliente') {
+                            const client = dbData.clients?.find(c => c.id === parsed.id);
+                            if (client) {
+                                setCurrentUser(client);
+                                setView('cliente_listado');
+                            }
+                        }
                     }
                 } catch (e) { 
                     console.error(e);
@@ -834,10 +947,14 @@
                 if (!globalData) return;
                 unlockAudio(); 
                 
-                if (pinInput === (globalData.profesorPin || '0000')) { setView('profesor'); } 
+                if (pinInput === (globalData.profesorPin || '0000')) { 
+                    localStorage.setItem(`bravo_session_${CLIENTE_ID}`, JSON.stringify({type: 'profesor', pin: pinInput}));
+                    setView('profesor'); 
+                } 
                 else {
                     const client = globalData.clients?.find(c => c.pin === pinInput);
                     if (client) { 
+                        localStorage.setItem(`bravo_session_${CLIENTE_ID}`, JSON.stringify({type: 'cliente', id: client.id}));
                         setCurrentUser(client); 
                         setView('cliente_listado'); 
                     } else { showToast('PIN incorrecto. Revisalo bien.', 'error'); }
@@ -940,6 +1057,34 @@
                     freshData.routines[clientId].push(newDay);
                 });
                 showToast('Plantilla duplicada con éxito');
+            };
+
+            // NUEVA FUNCIÓN: TRANSFERIR PLANTILLA A OTRO ALUMNO
+            const transferDayToClient = (sourceClientId, targetClientId, dayId) => {
+                mutateAndSave((freshData) => {
+                    const dayToClone = freshData.routines[sourceClientId]?.find(d => d.id === dayId);
+                    if (!dayToClone) return;
+
+                    const clonedSections = (dayToClone.sections || [{ name: 'Bloque Principal', exercises: dayToClone.exercises || [] }]).map(sec => ({
+                        ...sec,
+                        id: Math.random().toString(36).substr(2, 9),
+                        exercises: (sec.exercises || []).map(ex => ({
+                            ...ex,
+                            id: Math.random().toString(36).substr(2, 9)
+                        }))
+                    }));
+
+                    const newDay = {
+                        id: Date.now().toString(),
+                        name: dayToClone.name,
+                        sections: clonedSections
+                    };
+
+                    if (!freshData.routines[targetClientId]) freshData.routines[targetClientId] = [];
+                    freshData.routines[targetClientId].push(newDay);
+                });
+                const targetClient = globalData.clients.find(c => c.id === targetClientId);
+                showToast(`Plantilla asignada a ${targetClient?.name}`, 'info');
             };
 
             const addSection = (clientId, dayId) => {
@@ -1094,6 +1239,24 @@
                             onClose={() => setCatalogTarget(null)} 
                             onSelect={handleExerciseSelected} 
                         />
+                    )}
+
+                    {/* MODAL PARA TRANSFERENCIA DE PLANTILLAS */}
+                    {transferTarget && (
+                        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setTransferTarget(null)}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><i className="fa-solid fa-share-nodes text-brand-500"></i> Transferir plantilla a...</h3>
+                                <div className="space-y-2 max-h-60 overflow-y-auto hide-scrollbar">
+                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId).map(c => (
+                                        <button key={c.id} onClick={() => { transferDayToClient(transferTarget.sourceClientId, c.id, transferTarget.dayId); setTransferTarget(null); }} className="w-full text-left bg-dark-800 p-4 rounded-xl border border-white/5 hover:border-brand-500 text-white font-medium transition-colors flex items-center justify-between group">
+                                            {c.name} <i className="fa-solid fa-arrow-right text-gray-500 group-hover:text-brand-500"></i>
+                                        </button>
+                                    ))}
+                                    {globalData.clients.length <= 1 && <p className="text-gray-500 text-sm text-center py-4">No hay otros alumnos creados en tu panel.</p>}
+                                </div>
+                                <button onClick={() => setTransferTarget(null)} className="w-full mt-4 bg-dark-800 text-gray-400 font-bold py-3.5 rounded-xl border border-dark-600 hover:text-white transition-colors">Cancelar</button>
+                            </div>
+                        </div>
                     )}
 
                     {toast && (
@@ -1316,8 +1479,10 @@
                                                                 <p className="text-xs text-gray-400 truncate mt-0.5">{totalEx} ejercicios programados</p>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                <button onClick={(e) => { e.stopPropagation(); cloneDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors"><i className="fa-solid fa-copy"></i></button>
-                                                                <button onClick={(e) => { e.stopPropagation(); deleteDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-red-400 transition-colors"><i className="fa-solid fa-trash-can"></i></button>
+                                                                {/* NUEVO BOTÓN DE TRANSFERENCIA */}
+                                                                <button onClick={(e) => { e.stopPropagation(); setTransferTarget({ sourceClientId: activeClient.id, dayId: day.id }); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Transferir a otro alumno"><i className="fa-solid fa-share-nodes"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); cloneDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Duplicar"><i className="fa-solid fa-copy"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); deleteDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-red-400 transition-colors" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
                                                             </div>
                                                         </div>
                                                     );
@@ -1333,7 +1498,7 @@
                                 <>
                                     <header className="p-5 flex justify-between items-center glass-header sticky top-0 z-10">
                                         <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
-                                        <button onClick={() => setView('home')} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
+                                        <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
                                     </header>
                                     
                                     <div className="p-5 space-y-4">
@@ -1435,7 +1600,7 @@
                                         <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Y Salud'}</span>
                                     </div>
                                 </h1>
-                                <button onClick={() => setView('home')} className="text-white bg-dark-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm border border-white/5">Salir</button>
+                                <button onClick={logout} className="text-white bg-dark-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm border border-white/5">Salir</button>
                             </header>
 
                             <div className="p-5">
