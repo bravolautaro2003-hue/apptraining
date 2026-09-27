@@ -19,10 +19,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 
     <script>
-        // PWA - CACHÉ AGRESIVO OFFLINE PURO
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v1';
+                const CACHE_NAME = 'panel-pro-offline-v2';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -42,7 +41,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register(swUrl)
                     .then(() => console.log('PWA: Modo Offline Agresivo Activado'))
-                    .catch(() => console.log('SW bypass normal en algunos entornos de desarrollo'));
+                    .catch(() => console.log('SW bypass normal en desarrollo'));
             });
         }
 
@@ -57,6 +56,7 @@
                         'toast-down': 'toastDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'fade-in': 'fadeIn 0.25s ease-out forwards',
                         'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fill-bar': 'fillBar 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     },
                     keyframes: {
                         toastDown: {
@@ -70,6 +70,9 @@
                         slideUp: {
                             '0%': { transform: 'translateY(100%)' },
                             '100%': { transform: 'translateY(0)' },
+                        },
+                        fillBar: {
+                            '0%': { width: '0%' },
                         }
                     }
                 }
@@ -525,7 +528,6 @@
                 onSaveProgress(newSets, localNoteRef.current);
             };
 
-            // BLINDADO: Ya no borra series manuales del alumno si este agrega más de las configuradas
             useEffect(() => {
                 const saved = progressData?.sets || [];
                 let newSets = [...saved];
@@ -925,6 +927,26 @@
                 return `${m}:${s}`;
             };
 
+            const getTonnageForWeek = (weekNum) => {
+                if (!globalData || !currentUser || !globalData.progress) return 0;
+                let total = 0;
+                const weekData = globalData.progress[currentUser.id]?.[weekNum];
+                if (!weekData) return 0;
+                
+                Object.values(weekData).forEach(ex => {
+                    if (ex.sets) {
+                        ex.sets.forEach(set => {
+                            const w = parseFloat(set.weight?.toString().replace(',', '.') || 0);
+                            const r = parseInt(set.reps || 0);
+                            if (!isNaN(w) && !isNaN(r) && set.done) {
+                                total += (w * r);
+                            }
+                        });
+                    }
+                });
+                return total;
+            };
+
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
@@ -1126,8 +1148,6 @@
                     if (!day || !day.sections) return;
                     
                     day.sections = day.sections.filter(s => s.id !== secId);
-                    
-                    // Bug Fix: Si borran todos los bloques, creo uno vacío por defecto para que no se rompa la UI
                     if(day.sections.length === 0) {
                         day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Bloque Principal', exercises: [] });
                     }
@@ -1621,7 +1641,6 @@
                                         <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Y Salud'}</span>
                                     </div>
                                 </h1>
-                                <button onClick={logout} className="text-white bg-dark-800 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm border border-white/5">Salir</button>
                             </header>
 
                             <div className="p-5">
@@ -1656,12 +1675,116 @@
                                     })}
                                 </div>
                             </div>
-                            
-                            <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 text-gray-400 pb-5 z-20">
-                                <button className="text-brand-500 flex flex-col items-center gap-1"><i className="fa-solid fa-dumbbell text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Entrenar</span></button>
-                                <button onClick={() => showToast('Próximamente: Estadísticas de progreso')} className="hover:text-white transition-colors flex flex-col items-center gap-1"><i className="fa-solid fa-chart-line text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Progreso</span></button>
-                                <button onClick={() => showToast('Próximamente: Perfil de usuario')} className="hover:text-white transition-colors flex flex-col items-center gap-1"><i className="fa-regular fa-user text-lg"></i><span className="text-[10px] font-black uppercase tracking-wider">Perfil</span></button>
+                        </div>
+                    )}
+
+                    {view === 'cliente_progreso' && (
+                        <div className="app-container pb-24 relative z-10 bg-dark-900 animate-fade-in">
+                            <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-10 border-b border-white/5">
+                                <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
+                                    <i className="fa-solid fa-chart-line text-brand-500 text-lg"></i> Métrica de Rendimiento
+                                </h1>
+                            </header>
+
+                            <div className="p-5">
+                                <div className="mb-6 bg-dark-800/60 p-4 rounded-2xl border border-white/5">
+                                    <h2 className="text-lg font-black text-white mb-1">Volumen de Carga (Tonelaje)</h2>
+                                    <p className="text-xs text-gray-400 leading-relaxed">Suma total de kilos movidos (Series x Reps x Peso) durante cada semana de tu mesociclo actual. Ideal para monitorear la tensión mecánica y la sobrecarga progresiva.</p>
+                                </div>
+
+                                <div className="glass-panel p-5 rounded-3xl border border-white/5 shadow-xl">
+                                    {(() => {
+                                        const t1 = getTonnageForWeek(1);
+                                        const t2 = getTonnageForWeek(2);
+                                        const t3 = getTonnageForWeek(3);
+                                        const t4 = getTonnageForWeek(4);
+                                        const maxTonnage = Math.max(t1, t2, t3, t4, 100); 
+
+                                        return [1, 2, 3, 4].map(w => {
+                                            const tonnage = eval(`t${w}`);
+                                            const widthPercent = (tonnage / maxTonnage) * 100;
+                                            
+                                            return (
+                                                <div key={w} className="mb-5 last:mb-0">
+                                                    <div className="flex justify-between items-end mb-2">
+                                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">Semana {w}</span>
+                                                        <span className="text-sm font-black text-brand-500">{tonnage.toLocaleString()} <span className="text-[10px] text-gray-500">kg</span></span>
+                                                    </div>
+                                                    <div className="w-full bg-dark-950 rounded-full h-3.5 border border-dark-600 shadow-inner overflow-hidden">
+                                                        <div 
+                                                            className="bg-gradient-to-r from-brand-600 to-brand-500 h-full rounded-full shadow-[0_0_10px_rgba(0,230,118,0.5)] animate-fill-bar"
+                                                            style={{ width: `${widthPercent}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+
+                                <div className="mt-8 bg-dark-800 border-l-4 border-brand-500 p-4 rounded-r-xl shadow-inner flex gap-4 items-center">
+                                    <i className="fa-solid fa-circle-info text-brand-500 text-xl"></i>
+                                    <p className="text-xs text-gray-300">Asegurate de tildar (<i className="fa-solid fa-check mx-1"></i>) todas tus series durante el entrenamiento para que el progreso se calcule correctamente.</p>
+                                </div>
                             </div>
+                        </div>
+                    )}
+
+                    {view === 'cliente_perfil' && (
+                        <div className="app-container pb-24 relative z-10 bg-dark-900 animate-fade-in">
+                            <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-10 border-b border-white/5">
+                                <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
+                                    <i className="fa-regular fa-user text-brand-500 text-lg"></i> Tu Perfil
+                                </h1>
+                            </header>
+
+                            <div className="p-5 flex flex-col items-center mt-4">
+                                <div className="w-24 h-24 bg-gradient-to-br from-dark-800 to-dark-900 rounded-full flex items-center justify-center text-4xl font-black text-white border-2 border-brand-500/50 shadow-[0_0_20px_rgba(0,230,118,0.2)] mb-4">
+                                    {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <h2 className="text-2xl font-black text-white">{currentUser?.name}</h2>
+                                <span className="text-xs font-bold text-gray-500 bg-dark-800 px-3 py-1 rounded-full mt-2 border border-dark-700">Atleta</span>
+                            </div>
+
+                            <div className="px-5 mt-4 space-y-4">
+                                <div className="glass-panel p-4 rounded-2xl border border-white/5">
+                                    <h3 className="font-black text-[10px] text-gray-500 uppercase tracking-widest mb-3">Información de Cuenta</h3>
+                                    <div className="flex justify-between items-center border-b border-dark-700 pb-3 mb-3">
+                                        <span className="text-sm font-medium text-gray-300">Entrenador</span>
+                                        <span className="text-sm font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bolt text-brand-500 text-xs"></i> Profe de Musculación</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium text-gray-300">PIN de acceso</span>
+                                        <span className="text-sm font-bold text-brand-500 tracking-widest bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-500/20">{currentUser?.pin}</span>
+                                    </div>
+                                </div>
+
+                                <button onClick={() => {
+                                    if(window.confirm('¿Seguro que querés cerrar la sesión en este dispositivo?')) logout();
+                                }} className="w-full bg-dark-800 text-red-500 font-bold py-4 rounded-2xl border border-red-500/20 hover:bg-red-500/10 transition-colors shadow-sm flex items-center justify-center gap-2 text-sm">
+                                    <i className="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
+                                </button>
+                                
+                                <p className="text-center text-[10px] text-gray-600 font-black tracking-widest uppercase mt-6">Panel Pro v2.0</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* BARRA DE NAVEGACIÓN INFERIOR (Solo para vistas de cliente, oculta en modo entrenamiento activo) */}
+                    {view.startsWith('cliente_') && view !== 'cliente_entrenamiento' && (
+                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 pb-5 z-20">
+                            <button onClick={() => setView('cliente_listado')} className={`${view === 'cliente_listado' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                                <i className="fa-solid fa-dumbbell text-lg"></i>
+                                <span className="text-[9px] font-black uppercase tracking-wider">Entrenar</span>
+                            </button>
+                            <button onClick={() => setView('cliente_progreso')} className={`${view === 'cliente_progreso' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                                <i className="fa-solid fa-chart-line text-lg"></i>
+                                <span className="text-[9px] font-black uppercase tracking-wider">Progreso</span>
+                            </button>
+                            <button onClick={() => setView('cliente_perfil')} className={`${view === 'cliente_perfil' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                                <i className="fa-regular fa-user text-lg"></i>
+                                <span className="text-[9px] font-black uppercase tracking-wider">Perfil</span>
+                            </button>
                         </div>
                     )}
 
