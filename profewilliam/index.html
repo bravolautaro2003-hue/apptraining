@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v4';
+                const CACHE_NAME = 'panel-pro-offline-v6';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -410,7 +410,7 @@
             };
 
             const handleWeekConfigChange = (weekNum, field, value) => {
-                const updatedWeeks = structuredClone(localEx.weeks || {});
+                const updatedWeeks = JSON.parse(JSON.stringify(localEx.weeks || {}));
                 if (!updatedWeeks[weekNum]) {
                     updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10' };
                 }
@@ -507,7 +507,7 @@
                         <textarea 
                             className="w-full bg-dark-900/80 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none box-border"
                             rows="2"
-                            placeholder="Aclaraciones o notas rápidas para la sesión..."
+                            placeholder="Aclaraciones o notas rápida para la sesión..."
                             value={localEx.coachNote ?? ''}
                             onChange={(e) => handleChange('coachNote', e.target.value)}
                             onBlur={handleBlur}
@@ -802,7 +802,7 @@
         function App() {
             const [globalData, setGlobalData] = useState(null);
             const [loading, setLoading] = useState(true);
-            const [view, setView] = useState('landing'); 
+            const [view, setView] = useState('home'); // ARRANCAMOS DIRECTAMENTE EN EL LOGIN
             const [currentUser, setCurrentUser] = useState(null);
             const [pinInput, setPinInput] = useState('');
             const [newClientName, setNewClientName] = useState('');
@@ -820,6 +820,10 @@
             const [transferTarget, setTransferTarget] = useState(null);
 
             const [toast, setToast] = useState(null);
+
+            const saveTimeoutRef = useRef(null);
+            const pendingDataRef = useRef(null);
+            const isSavingRef = useRef(false);
             
             const showToast = (msg, type = 'info') => {
                 setToast({ msg, type });
@@ -832,33 +836,30 @@
                 setView('home');
             };
 
-            const mutateAndSave = async (mutationCallback) => {
-                let optimisticDataForDB;
+            const mutateAndSave = (mutationCallback) => {
+                isSavingRef.current = true;
                 
                 setGlobalData(prev => {
                     if (!prev) return prev;
-                    const cloned = structuredClone(prev);
+                    const cloned = JSON.parse(JSON.stringify(prev));
                     mutationCallback(cloned);
-                    optimisticDataForDB = cloned;
+                    pendingDataRef.current = cloned; 
                     return cloned;
                 });
 
-                setTimeout(async () => {
-                    if (!optimisticDataForDB) return;
+                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                
+                saveTimeoutRef.current = setTimeout(async () => {
+                    if (!pendingDataRef.current) return;
                     try {
-                        const { data: latest } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                        let freshData = optimisticDataForDB;
-                        
-                        if (latest && latest.data) {
-                            freshData = latest.data;
-                            mutationCallback(freshData); 
-                        }
-                        
-                        await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: freshData });
+                        await supabase.from('bravo_state').upsert({ id: CLIENTE_ID, data: pendingDataRef.current });
                     } catch (e) {
-                        console.error("Error de sincronización:", e);
+                        console.error("Error de sincronización con Supabase:", e);
+                    } finally {
+                        setTimeout(() => { isSavingRef.current = false; }, 1000);
+                        saveTimeoutRef.current = null;
                     }
-                }, 0);
+                }, 500); 
             };
 
             const updateAppSetting = (key, value) => {
@@ -884,7 +885,9 @@
                 fetchData();
                 const channel = supabase.channel(`realtime_${CLIENTE_ID}`).on('postgres_changes', { event: '*', schema: 'public', table: 'bravo_state' }, (payload) => {
                     if(payload && payload.new && payload.new.id === CLIENTE_ID) {
-                        setGlobalData(payload.new.data);
+                        if (!isSavingRef.current) {
+                            setGlobalData(payload.new.data);
+                        }
                     }
                 }).subscribe();
                 return () => { supabase.removeChannel(channel); };
@@ -988,15 +991,19 @@
                     
                     const savedSession = localStorage.getItem(`bravo_session_${CLIENTE_ID}`);
                     if (savedSession) {
-                        const parsed = JSON.parse(savedSession);
-                        if (parsed.type === 'profesor' && parsed.pin === (dbData.profesorPin || '0000')) {
-                            setView('profesor');
-                        } else if (parsed.type === 'cliente') {
-                            const client = dbData.clients?.find(c => c.id === parsed.id);
-                            if (client) {
-                                setCurrentUser(client);
-                                setView('cliente_listado');
+                        try {
+                            const parsed = JSON.parse(savedSession);
+                            if (parsed.type === 'profesor' && parsed.pin === (dbData.profesorPin || '0000')) {
+                                setView('profesor');
+                            } else if (parsed.type === 'cliente') {
+                                const client = dbData.clients?.find(c => c.id === parsed.id);
+                                if (client) {
+                                    setCurrentUser(client);
+                                    setView('cliente_listado');
+                                }
                             }
+                        } catch (parseError) {
+                            localStorage.removeItem(`bravo_session_${CLIENTE_ID}`);
                         }
                     }
                 } catch (e) { 
@@ -1317,7 +1324,7 @@
 
             return (
                 <div className="relative" style={appStyleVars}>
-                    {view !== 'home' && view !== 'landing' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
+                    {view !== 'home' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
 
                     {catalogTarget && (
                         <ExerciseCatalogModal 
@@ -1350,92 +1357,6 @@
                         </div>
                     )}
 
-                    {view === 'landing' && (
-                        <div className="app-container relative z-10 bg-dark-900 pb-10">
-                            <div
-                                className="p-6 pb-10 relative"
-                                style={{
-                                    backgroundImage: 'linear-gradient(to bottom, rgba(10,10,12,0.35) 0%, rgba(5,5,7,0.97) 100%), url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop")',
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center'
-                                }}
-                            >
-                                <div className="flex items-center justify-between mb-10 relative z-20">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-xs shadow-[0_0_15px_var(--brand-glow)] border border-white/20 transform rotate-3">
-                                            <i className="fa-solid fa-dumbbell -rotate-3"></i>
-                                        </div>
-                                        <span className="text-white font-black text-sm tracking-wide">{globalData?.appTitle1 || 'Entrenamiento'} {(globalData?.appTitle2 || 'y Salud').toLowerCase()}</span>
-                                    </div>
-                                    <button onClick={() => setView('home')} className="text-xs font-bold text-white bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-colors">Ingresar</button>
-                                </div>
-
-                                <div className="relative z-20">
-                                    <h1 className="text-3xl font-black text-white leading-tight mb-3">Llevá a tus alumnos con una sola app, semana tras semana</h1>
-                                    <p className="text-gray-300 text-sm leading-relaxed mb-6">Armá las rutinas, cargá el catálogo de ejercicios y mirá el progreso real de cada alumno en la máquina. Sin planillas sueltas ni mensajes perdidos.</p>
-                                    <button onClick={() => setView('home')} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-4 rounded-2xl font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-brand-500/40 uppercase tracking-widest">
-                                        Empezar ahora
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6 pt-2">
-                                <div className="grid grid-cols-1 gap-4 mb-10">
-                                    {[
-                                        { icon: 'fa-people-group', title: 'Alumnos ilimitados', text: 'Cada alumno entra con su propio PIN y ve solo su rutina.' },
-                                        { icon: 'fa-calendar-week', title: 'Rutinas semana a semana', text: 'Series, reps y RIR programados para las 4 semanas del mesociclo.' },
-                                        { icon: 'fa-chart-line', title: 'Progreso automático', text: 'Cada peso y repetición que carga el alumno queda guardado, semana por semana.' },
-                                        { icon: 'fa-mobile-screen', title: 'Instalable como app', text: 'Tus alumnos la agregan a la pantalla de inicio del celular, sin bajar nada de una tienda.' },
-                                    ].map((f, i) => (
-                                        <div key={i} className="glass-panel p-4 rounded-2xl flex gap-4 items-start border border-white/5">
-                                            <div className="w-11 h-11 shrink-0 bg-dark-800 rounded-xl flex items-center justify-center text-brand-500 border border-dark-600">
-                                                <i className={`fa-solid ${f.icon}`}></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-white font-bold text-sm mb-1">{f.title}</h3>
-                                                <p className="text-gray-400 text-xs leading-relaxed">{f.text}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <h2 className="text-white font-black text-lg mb-1">Para profesores y entrenadores</h2>
-                                <p className="text-gray-400 text-xs mb-5">Un panel de profesor por suscripción, con alumnos y plantillas sin límite.</p>
-
-                                <div className="space-y-4 mb-8">
-                                    <div className="glass-panel p-5 rounded-2xl border border-white/5">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-white font-bold text-base">Mensual</h3>
-                                            <span className="text-brand-500 font-black text-xl">$XX.XXX<span className="text-gray-400 text-xs font-semibold">/mes</span></span>
-                                        </div>
-                                        <ul className="text-xs text-gray-300 space-y-2 mb-4">
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Alumnos y plantillas sin límite</li>
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Catálogo de más de 100 ejercicios</li>
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Soporte por WhatsApp</li>
-                                        </ul>
-                                        <button onClick={() => showToast('¡Gracias por tu interés! Escribinos para activar tu suscripción.')} className="w-full bg-dark-800 text-white font-bold py-3 rounded-xl border border-white/10 hover:bg-dark-700 transition-colors text-sm">Suscribirme</button>
-                                    </div>
-
-                                    <div className="glass-panel p-5 rounded-2xl border-2 border-brand-500/50 relative">
-                                        <span className="absolute -top-3 left-5 bg-brand-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Más elegido</span>
-                                        <div className="flex items-center justify-between mb-3 mt-1">
-                                            <h3 className="text-white font-bold text-base">Anual</h3>
-                                            <span className="text-brand-500 font-black text-xl">$XX.XXX<span className="text-gray-400 text-xs font-semibold">/mes</span></span>
-                                        </div>
-                                        <ul className="text-xs text-gray-300 space-y-2 mb-4">
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Todo lo del plan mensual</li>
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Dos meses bonificados</li>
-                                            <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-500"></i> Precio congelado durante el año</li>
-                                        </ul>
-                                        <button onClick={() => showToast('¡Gracias por tu interés! Escribinos para activar tu suscripción.')} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-black py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all text-sm uppercase tracking-wide">Suscribirme</button>
-                                    </div>
-                                </div>
-
-                                <p className="text-center text-gray-500 text-xs">¿Ya tenés una cuenta? <span onClick={() => setView('home')} className="text-brand-500 font-bold cursor-pointer">Iniciá sesión</span></p>
-                            </div>
-                        </div>
-                    )}
-
                     {view === 'home' && (
                         <div 
                             className="app-container flex flex-col justify-between p-6 h-screen relative z-10"
@@ -1445,10 +1366,7 @@
                                 backgroundPosition: 'center' 
                             }}
                         >
-                            <button onClick={() => setView('landing')} className="text-white/70 hover:text-white w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm relative z-20">
-                                <i className="fa-solid fa-arrow-left"></i>
-                            </button>
-                            <div className="text-center animate-fade-in my-auto relative z-20">
+                            <div className="text-center animate-fade-in my-auto relative z-20 mt-20">
                                 <div className="inline-flex justify-center items-center w-28 h-28 bg-gradient-to-br from-dark-800 to-dark-950 rounded-[2rem] border-2 border-brand-500/40 text-brand-500 mb-8 shadow-[0_0_40px_var(--brand-glow)] relative overflow-hidden transform rotate-3">
                                     <div className="absolute inset-0 bg-brand-500/10 backdrop-blur-md"></div>
                                     <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_var(--brand-glow-strong)] -rotate-3"></i>
@@ -1792,14 +1710,16 @@
 
                                 <div className="glass-panel p-5 rounded-3xl border border-white/5 shadow-xl">
                                     {(() => {
-                                        const t1 = getTonnageForWeek(1);
-                                        const t2 = getTonnageForWeek(2);
-                                        const t3 = getTonnageForWeek(3);
-                                        const t4 = getTonnageForWeek(4);
-                                        const maxTonnage = Math.max(t1, t2, t3, t4, 100); 
+                                        const tonnages = {
+                                            1: getTonnageForWeek(1),
+                                            2: getTonnageForWeek(2),
+                                            3: getTonnageForWeek(3),
+                                            4: getTonnageForWeek(4)
+                                        };
+                                        const maxTonnage = Math.max(tonnages[1], tonnages[2], tonnages[3], tonnages[4], 100); 
 
                                         return [1, 2, 3, 4].map(w => {
-                                            const tonnage = eval(`t${w}`);
+                                            const tonnage = tonnages[w];
                                             const widthPercent = (tonnage / maxTonnage) * 100;
                                             
                                             return (
