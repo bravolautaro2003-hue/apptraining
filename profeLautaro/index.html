@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v8';
+                const CACHE_NAME = 'panel-pro-offline-v9';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -89,8 +89,33 @@
             --brand-glow: rgba(0, 230, 118, 0.4);
             --brand-glow-strong: rgba(0, 230, 118, 0.7);
         }
-        body { -webkit-tap-highlight-color: transparent; background-color: #050507; color: #f3f3f6; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #0a0a0c; border-left: 1px solid #1e1e24; border-right: 1px solid #1e1e24; box-shadow: 0 0 50px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        
+        /* BLOQUEO ESTRÍCTO DE SCROLL HORIZONTAL */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            position: relative;
+            overscroll-behavior-x: none; /* Evita que en iOS/Android rebote al deslizar horizontal */
+            touch-action: pan-y; /* Permite scroll vertical pero bloquea gestos horizontales nativos */
+            -webkit-tap-highlight-color: transparent; 
+            background-color: #050507; 
+            color: #f3f3f6; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .app-container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            min-height: 100vh; 
+            width: 100%;
+            background-color: #0a0a0c; 
+            border-left: 1px solid #1e1e24; 
+            border-right: 1px solid #1e1e24; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.9); 
+            position: relative; 
+            overflow-x: hidden !important; /* Bloqueo estricto */
+        }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -118,9 +143,9 @@
         // ==========================================
         // CONSTANTES DE LICENCIA DEL CLIENTE (B2B)
         // ==========================================
-        const CLIENTE_ID = 'Lautaro_Bravo'; // ID único para aislar base de datos
-        const MAX_CLIENTES = 2; // Número máximo de alumnos permitidos (null para ilimitado)
-        const FECHA_VENCIMIENTO = '2026-09-29'; // Fecha de corte formato 'YYYY-MM-DD' (null para sin vencimiento)
+        const CLIENTE_ID = 'Lautaro_Bravo'; 
+        const MAX_CLIENTES = null; // Ilimitado
+        const FECHA_VENCIMIENTO = null; // Infinito
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
@@ -416,7 +441,8 @@
             const handleWeekConfigChange = (weekNum, field, value) => {
                 const updatedWeeks = JSON.parse(JSON.stringify(localEx.weeks || {}));
                 if (!updatedWeeks[weekNum]) {
-                    updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10' };
+                    // Inicializa con los valores genéricos, pero ahora RIR también viaja acá
+                    updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10', rir: localEx.rir ?? '2' };
                 }
                 updatedWeeks[weekNum][field] = value;
                 updateLocalAndRef({ ...localEx, weeks: updatedWeeks });
@@ -426,7 +452,7 @@
                 onUpdate(localExRef.current);
             };
 
-            const currentWeekData = localEx.weeks?.[editWeek] || { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10' };
+            const currentWeekData = localEx.weeks?.[editWeek] || { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10', rir: localEx.rir ?? '2' };
 
             const exerciseNotes = [];
             if (clientProgress) {
@@ -477,24 +503,25 @@
                             </div>
                         </div>
 
-                        <div className="flex gap-4 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
+                        <div className="flex gap-3 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
                             <div className="flex items-center gap-2 flex-1">
-                                <span className="text-xs text-gray-400">Series:</span>
-                                <input className="w-12 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
+                                <span className="text-xs text-gray-400">Sets:</span>
+                                <input className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
                             </div>
                             <div className="flex items-center gap-2 flex-1">
-                                <span className="text-xs text-gray-400">Reps/s:</span>
-                                <input className="w-16 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
+                                <span className="text-xs text-gray-400">Reps:</span>
+                                <input className="w-14 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
+                            </div>
+                            <div className="flex items-center gap-2 flex-[0.8]">
+                                <span className="text-xs text-gray-400">RIR:</span>
+                                <input className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.rir ?? localEx.rir ?? '2'} onChange={(e) => handleWeekConfigChange(editWeek, 'rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
                             </div>
                         </div>
                     </div>
 
                     <div className="flex gap-4 text-sm text-gray-400 items-center py-1">
-                        <div className="text-xs flex items-center gap-1.5">
-                            RIR <input type="text" className="w-12 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={localEx.rir ?? '2'} onChange={(e) => handleChange('rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
-                        </div>
                         <div className="flex items-center gap-1.5">
-                            <i className="fa-regular fa-clock text-brand-500"></i> <input className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Descanso general:</span> <i className="fa-regular fa-clock text-brand-500"></i> <input className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
                         </div>
                     </div>
                     
@@ -531,7 +558,7 @@
         }
 
         function ClientExerciseRow({ exercise, activeWeek, progressData, previousWeekData, allWeeksData, onSaveProgress, onStartRest, showToast }) {
-            const weekConfig = exercise.weeks?.[activeWeek] || { sets: exercise.sets || '4', reps: exercise.reps || '10' };
+            const weekConfig = exercise.weeks?.[activeWeek] || { sets: exercise.sets || '4', reps: exercise.reps || '10', rir: exercise.rir || '2' };
             const baseSetsCount = parseInt(weekConfig.sets) || 1;
             const isUni = exercise.isUnilateral === true;
             const totalRows = isUni ? baseSetsCount * 2 : baseSetsCount;
@@ -675,7 +702,7 @@
                                 <h4 onClick={() => setShowInfoModal(true)} className="font-bold text-base text-white leading-tight tracking-wide cursor-pointer hover:text-brand-500 flex items-center gap-1.5 transition-colors group">
                                     {exercise.name} <i className="fa-solid fa-circle-info text-xs text-brand-500 opacity-60 group-hover:opacity-100 transition-opacity"></i>
                                 </h4>
-                                <span className="text-xs text-brand-500 font-semibold">Sem. {activeWeek} • Pauta: {weekConfig.sets} x {weekConfig.reps} (RIR {exercise.rir || '2'})</span>
+                                <span className="text-xs text-brand-500 font-semibold">Sem. {activeWeek} • Pauta: {weekConfig.sets} x {weekConfig.reps} (RIR {weekConfig.rir || exercise.rir || '2'})</span>
                             </div>
                         </div>
                     </div>
@@ -902,7 +929,6 @@
                 showToast('Métrica actualizada correctamente', 'info');
             };
 
-            // Verificación de Licencia
             useEffect(() => {
                 if (FECHA_VENCIMIENTO) {
                     const expiryDate = new Date(FECHA_VENCIMIENTO + 'T23:59:59');
@@ -953,6 +979,23 @@
                 }
                 return () => clearInterval(restInterval);
             }, [restTime > 0, restTimerKey]);
+
+            // MANEJO DE HISTORY API PARA BLOQUEAR EL GESTO/BOTÓN DE ATRÁS EN ENTRENAMIENTO
+            useEffect(() => {
+                const handlePopState = (e) => {
+                    if (view === 'cliente_entrenamiento' && isTrainingStarted) {
+                        if (!window.confirm("¿Seguro que querés salir del entrenamiento en curso? Perderás el cronómetro.")) {
+                            // Si cancela, volvemos a empujar el estado para mantener la trampa
+                            window.history.pushState(null, '', window.location.href);
+                        } else {
+                            setIsTrainingStarted(false);
+                            setView('cliente_listado');
+                        }
+                    }
+                };
+                window.addEventListener('popstate', handlePopState);
+                return () => window.removeEventListener('popstate', handlePopState);
+            }, [view, isTrainingStarted]);
 
             useEffect(() => {
                 let wakeLock = null;
@@ -1071,7 +1114,6 @@
             const addClient = () => {
                 if (!newClientName.trim()) return;
 
-                // Verificación de Licencia por Cantidad de Alumnos
                 if (MAX_CLIENTES !== null && (globalData.clients?.length || 0) >= MAX_CLIENTES) {
                     showToast(`Límite de licencia alcanzado (${MAX_CLIENTES} alumnos). Renovación requerida.`, 'error');
                     return;
@@ -1363,7 +1405,6 @@
                 '--brand-glow-strong': currentTheme.glowStrong,
             };
 
-            // PANTALLA DE BLOQUEO POR LICENCIA
             if (!isLicenseValid) {
                 return (
                     <div className="app-container flex flex-col justify-center items-center h-screen bg-dark-900 p-8 text-center relative" style={appStyleVars}>
@@ -1947,7 +1988,7 @@
                                                         <h3 className="font-black text-xs text-brand-500 uppercase tracking-widest mb-3 border-b border-dark-700 pb-2">{sec.name}</h3>
                                                         <div className="space-y-3">
                                                             {sec.exercises?.map((ex) => {
-                                                                const wCfg = ex.weeks?.[activeWeek] || { sets: ex.sets || '4', reps: ex.reps || '10' };
+                                                                const wCfg = ex.weeks?.[activeWeek] || { sets: ex.sets || '4', reps: ex.reps || '10', rir: ex.rir || '2' };
                                                                 return (
                                                                     <div key={ex.id} className="glass-panel p-3.5 rounded-2xl flex gap-3.5 items-center border border-white/5 shadow-sm">
                                                                         <div className="w-12 h-12 bg-dark-800 rounded-2xl flex items-center justify-center shrink-0 border border-dark-600 text-brand-500 overflow-hidden">
@@ -1958,7 +1999,7 @@
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 overflow-hidden">
-                                                                            <p className="text-[10px] text-brand-500 font-black mb-0.5 tracking-wider uppercase">{wCfg.sets ?? '4'} SERIES x {wCfg.reps ?? '10'} REPS/S • RIR {ex.rir ?? '2'}</p>
+                                                                            <p className="text-[10px] text-brand-500 font-black mb-0.5 tracking-wider uppercase">{wCfg.sets ?? '4'} SERIES x {wCfg.reps ?? '10'} REPS/S • RIR {wCfg.rir ?? '2'}</p>
                                                                             <p className="font-bold text-white text-sm leading-tight truncate">{ex.name}</p>
                                                                         </div>
                                                                     </div>
@@ -1973,7 +2014,13 @@
                                 </div>
 
                                 <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur p-4 border-t border-white/5 z-20">
-                                    <button onClick={() => { setIsTrainingStarted(true); setTrainingTime(0); setRestTime(0); unlockAudio(); }} className="w-full bg-brand-500 text-white font-black text-sm uppercase tracking-wider py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/30">
+                                    <button onClick={() => { 
+                                        setIsTrainingStarted(true); 
+                                        setTrainingTime(0); 
+                                        setRestTime(0); 
+                                        unlockAudio(); 
+                                        window.history.pushState({training: true}, '', window.location.href); 
+                                    }} className="w-full bg-brand-500 text-white font-black text-sm uppercase tracking-wider py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/30">
                                         <i className="fa-solid fa-play"></i> Empezar Entrenamiento
                                     </button>
                                 </div>
@@ -1981,8 +2028,22 @@
                         ) : (
                             <div className="app-container pb-20 relative z-10 bg-dark-900">
                                 <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-20 shadow-md">
+                                    <button onClick={() => {
+                                        if (window.confirm("¿Seguro que querés salir del entrenamiento en curso? Perderás el cronómetro.")) {
+                                            setIsTrainingStarted(false);
+                                            setView('cliente_listado');
+                                        }
+                                    }} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                    
                                     <button onClick={() => showToast('Sesión en curso')} className="text-brand-500 text-xs font-black uppercase tracking-wider flex items-center gap-2 bg-dark-800 px-3.5 py-2 rounded-xl border border-white/5"><i className="fa-solid fa-stopwatch animate-pulse"></i> {formatTime(trainingTime)}</button>
-                                    <button onClick={() => { setIsTrainingStarted(false); showToast(`¡Entrenamiento finalizado! Tiempo: ${formatTime(trainingTime)}`); setView('cliente_listado'); }} className="bg-dark-800 text-brand-500 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border border-white/5 hover:bg-dark-700 transition-colors">Terminar</button>
+                                    
+                                    <button onClick={() => { 
+                                        if (window.confirm("¿Estás seguro que querés FINALIZAR el entrenamiento de hoy?")) {
+                                            setIsTrainingStarted(false); 
+                                            showToast(`¡Entrenamiento finalizado! Tiempo: ${formatTime(trainingTime)}`); 
+                                            setView('cliente_listado'); 
+                                        }
+                                    }} className="bg-dark-800 text-brand-500 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border border-white/5 hover:bg-dark-700 transition-colors">Terminar</button>
                                 </header>
 
                                 <div className="p-4 pt-6">
