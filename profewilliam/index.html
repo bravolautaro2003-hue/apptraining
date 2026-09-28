@@ -802,7 +802,7 @@
         function App() {
             const [globalData, setGlobalData] = useState(null);
             const [loading, setLoading] = useState(true);
-            const [view, setView] = useState('home'); // ARRANCAMOS DIRECTAMENTE EN EL LOGIN
+            const [view, setView] = useState('home');
             const [currentUser, setCurrentUser] = useState(null);
             const [pinInput, setPinInput] = useState('');
             const [newClientName, setNewClientName] = useState('');
@@ -986,7 +986,7 @@
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} };
+                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {} };
                     setGlobalData(dbData);
                     
                     const savedSession = localStorage.getItem(`bravo_session_${CLIENTE_ID}`);
@@ -1008,7 +1008,7 @@
                     }
                 } catch (e) { 
                     console.error(e);
-                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', clients: [], routines: {}, progress: {} });
+                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {} });
                 }
                 setLoading(false);
             };
@@ -1053,8 +1053,8 @@
                 if(window.confirm('¿Seguro que querés eliminar a este alumno y TODAS sus rutinas? Esta acción no se puede deshacer.')) {
                     mutateAndSave((freshData) => {
                         freshData.clients = freshData.clients.filter(c => c.id !== clientId);
-                        delete freshData.routines[clientId];
-                        if (freshData.progress) delete freshData.progress[clientId];
+                        if(freshData.routines) delete freshData.routines[clientId];
+                        if(freshData.progress) delete freshData.progress[clientId];
                     });
                     setActiveClient(null);
                     showToast('Alumno eliminado correctamente.');
@@ -1554,7 +1554,18 @@
                                                 </div>
                                             </div>
 
-                                            <div>
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nombre del Entrenador</label>
+                                                <input 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                    defaultValue={globalData.profesorName || ''}
+                                                    onBlur={(e) => updateAppSetting('profesorName', e.target.value)}
+                                                    placeholder="Ej: Lautaro Bravo"
+                                                />
+                                                <p className="text-[9px] text-gray-500 mt-1">Este nombre aparecerá en la sección de perfil de tus alumnos.</p>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color de la Marca</label>
                                                 <div className="flex gap-2.5 mt-2 flex-wrap">
                                                     {Object.keys(THEMES).map(themeName => {
@@ -1819,7 +1830,7 @@
                                     <h3 className="font-black text-[10px] text-gray-500 uppercase tracking-widest mb-3">Información de Cuenta</h3>
                                     <div className="flex justify-between items-center border-b border-dark-700 pb-3 mb-3">
                                         <span className="text-sm font-medium text-gray-300">Entrenador</span>
-                                        <span className="text-sm font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bolt text-brand-500 text-xs"></i> Profe de Musculación</span>
+                                        <span className="text-sm font-bold text-white flex items-center gap-2"><i className="fa-solid fa-bolt text-brand-500 text-xs"></i> {globalData?.profesorName || 'Tu Entrenador'}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-300">PIN de acceso</span>
