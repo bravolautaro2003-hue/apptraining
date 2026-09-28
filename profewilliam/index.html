@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v6';
+                const CACHE_NAME = 'panel-pro-offline-v7';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -121,7 +121,6 @@
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // MOTOR DE MARCA BLANCA - Temas integrados dinámicamente
         const THEMES = {
             green: { 500: '0 230 118', 600: '0 184 92', glow: 'rgba(0, 230, 118, 0.4)', glowStrong: 'rgba(0, 230, 118, 0.7)' },
             blue: { 500: '59 130 246', 600: '37 99 235', glow: 'rgba(59, 130, 246, 0.4)', glowStrong: 'rgba(59, 130, 246, 0.7)' },
@@ -604,6 +603,17 @@
                 commitSets(newSets);
             };
 
+            const removeLastSet = () => {
+                const removeCount = isUni ? 2 : 1;
+                const newSets = [...localSetsRef.current];
+                if (newSets.length > removeCount) { 
+                    newSets.splice(-removeCount, removeCount);
+                    commitSets(newSets);
+                } else {
+                    showToast('Debe quedar al menos una serie en el ejercicio', 'error');
+                }
+            };
+
             const cycleSetType = (e, index) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -792,9 +802,14 @@
                             </div>
                         )
                     })}
-                    <button type="button" onClick={addSet} className="w-full mt-4 bg-dark-800 text-brand-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
-                        + Añadir serie {isUni ? 'I/D' : ''}
-                    </button>
+                    <div className="flex gap-2 mt-4">
+                        <button type="button" onClick={addSet} className="flex-1 bg-dark-800 text-brand-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
+                            + Añadir {isUni ? 'I/D' : ''}
+                        </button>
+                        <button type="button" onClick={removeLastSet} className="flex-1 bg-dark-800 text-red-500 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider border border-dark-600 hover:bg-dark-700 transition-colors box-border shadow-md">
+                            - Eliminar {isUni ? 'I/D' : ''}
+                        </button>
+                    </div>
                 </div>
             );
         }
