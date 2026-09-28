@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v3';
+                const CACHE_NAME = 'panel-pro-offline-v4';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -49,7 +49,10 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 500: '#00E676', 600: '#00B85C', glow: 'rgba(0, 230, 118, 0.4)', blue: '#3b82f6' },
+                        brand: { 
+                            500: 'rgb(var(--brand-500) / <alpha-value>)', 
+                            600: 'rgb(var(--brand-600) / <alpha-value>)' 
+                        },
                         dark: { 950: '#050507', 900: '#0a0a0c', 800: '#131318', 700: '#1d1d24', 600: '#2c2c35' }
                     },
                     animation: {
@@ -80,6 +83,12 @@
         }
     </script>
     <style>
+        :root {
+            --brand-500: 0 230 118;
+            --brand-600: 0 184 92;
+            --brand-glow: rgba(0, 230, 118, 0.4);
+            --brand-glow-strong: rgba(0, 230, 118, 0.7);
+        }
         body { -webkit-tap-highlight-color: transparent; background-color: #050507; color: #f3f3f6; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background-color: #0a0a0c; border-left: 1px solid #1e1e24; border-right: 1px solid #1e1e24; box-shadow: 0 0 50px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -111,6 +120,17 @@
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // MOTOR DE MARCA BLANCA - Temas integrados dinámicamente
+        const THEMES = {
+            green: { 500: '0 230 118', 600: '0 184 92', glow: 'rgba(0, 230, 118, 0.4)', glowStrong: 'rgba(0, 230, 118, 0.7)' },
+            blue: { 500: '59 130 246', 600: '37 99 235', glow: 'rgba(59, 130, 246, 0.4)', glowStrong: 'rgba(59, 130, 246, 0.7)' },
+            red: { 500: '239 68 68', 600: '220 38 38', glow: 'rgba(239, 68, 68, 0.4)', glowStrong: 'rgba(239, 68, 68, 0.7)' },
+            purple: { 500: '168 85 247', 600: '147 51 234', glow: 'rgba(168, 85, 247, 0.4)', glowStrong: 'rgba(168, 85, 247, 0.7)' },
+            orange: { 500: '249 115 22', 600: '234 88 12', glow: 'rgba(249, 115, 22, 0.4)', glowStrong: 'rgba(249, 115, 22, 0.7)' },
+            gold: { 500: '234 179 8', 600: '202 138 4', glow: 'rgba(234, 179, 8, 0.4)', glowStrong: 'rgba(234, 179, 8, 0.7)' },
+            pink: { 500: '236 72 153', 600: '219 39 119', glow: 'rgba(236, 72, 153, 0.4)', glowStrong: 'rgba(236, 72, 153, 0.7)' }
+        };
 
         const EXERCISE_CATALOG = [
             { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
@@ -209,7 +229,7 @@
                         <button onClick={() => {
                             const customName = prompt("Nombre del ejercicio personalizado:");
                             if(customName && customName.trim() !== '') onSelect(customName.trim());
-                        }} className="text-brand-blue font-semibold text-base pr-2">Crear</button>
+                        }} className="font-semibold text-base text-gray-300 pr-2">Crear</button>
                     </header>
 
                     <div className="p-4 border-b border-white/5 bg-dark-900/95 backdrop-blur-md">
@@ -766,7 +786,7 @@
                                     onBlur={handleSetBlur}
                                 />
                                 
-                                <button type="button" onClick={(e) => toggleDone(e, i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(0,230,118,0.5)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
+                                <button type="button" onClick={(e) => toggleDone(e, i)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all box-border ${set.done ? 'bg-brand-500 text-white shadow-[0_0_15px_var(--brand-glow)] font-bold scale-105' : 'bg-dark-800 text-gray-500 border border-dark-600 hover:text-white'}`}>
                                     <i className="fa-solid fa-check"></i>
                                 </button>
                             </div>
@@ -1284,10 +1304,19 @@
                 });
             };
 
+            // Cálculo dinámico del tema
+            const currentTheme = THEMES[globalData?.themeColor] || THEMES.green;
+            const appStyleVars = {
+                '--brand-500': currentTheme[500],
+                '--brand-600': currentTheme[600],
+                '--brand-glow': currentTheme.glow,
+                '--brand-glow-strong': currentTheme.glowStrong,
+            };
+
             if (loading) return <div className="app-container flex justify-center items-center h-screen bg-dark-900 text-brand-500 text-2xl font-bold"><i className="fa-solid fa-fire fa-spin mr-3"></i> Cargando...</div>;
 
             return (
-                <div className="relative">
+                <div className="relative" style={appStyleVars}>
                     {view !== 'home' && view !== 'landing' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
 
                     {catalogTarget && (
@@ -1333,7 +1362,7 @@
                             >
                                 <div className="flex items-center justify-between mb-10 relative z-20">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-xs shadow-[0_0_15px_rgba(0,230,118,0.4)] border border-white/20 transform rotate-3">
+                                        <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-xs shadow-[0_0_15px_var(--brand-glow)] border border-white/20 transform rotate-3">
                                             <i className="fa-solid fa-dumbbell -rotate-3"></i>
                                         </div>
                                         <span className="text-white font-black text-sm tracking-wide">{globalData?.appTitle1 || 'Entrenamiento'} {(globalData?.appTitle2 || 'y Salud').toLowerCase()}</span>
@@ -1420,9 +1449,9 @@
                                 <i className="fa-solid fa-arrow-left"></i>
                             </button>
                             <div className="text-center animate-fade-in my-auto relative z-20">
-                                <div className="inline-flex justify-center items-center w-28 h-28 bg-gradient-to-br from-dark-800 to-dark-950 rounded-[2rem] border-2 border-brand-500/40 text-brand-500 mb-8 shadow-[0_0_40px_rgba(0,230,118,0.4)] relative overflow-hidden transform rotate-3">
+                                <div className="inline-flex justify-center items-center w-28 h-28 bg-gradient-to-br from-dark-800 to-dark-950 rounded-[2rem] border-2 border-brand-500/40 text-brand-500 mb-8 shadow-[0_0_40px_var(--brand-glow)] relative overflow-hidden transform rotate-3">
                                     <div className="absolute inset-0 bg-brand-500/10 backdrop-blur-md"></div>
-                                    <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_rgba(0,230,118,0.8)] -rotate-3"></i>
+                                    <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_var(--brand-glow-strong)] -rotate-3"></i>
                                 </div>
                                 
                                 <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-0.5 drop-shadow-lg">{globalData?.appTitle1 || 'Entrenamiento'}</h1>
@@ -1585,32 +1614,65 @@
                                         </div>
 
                                         <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Marca Blanca)</h3>
-                                        <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-3 shadow-md mb-6">
-                                            <div>
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título Principal</label>
-                                                <input 
-                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
-                                                    defaultValue={globalData.appTitle1 || 'Entrenamiento'}
-                                                    onBlur={(e) => updateAppSetting('appTitle1', e.target.value)}
-                                                    placeholder="Ej: Alpha"
-                                                />
+                                        <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4 shadow-md mb-6">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título App</label>
+                                                    <input 
+                                                        className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                        defaultValue={globalData.appTitle1 || 'Entrenamiento'}
+                                                        onBlur={(e) => updateAppSetting('appTitle1', e.target.value)}
+                                                        placeholder="Ej: Alpha"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subtítulo</label>
+                                                    <input 
+                                                        className="w-full bg-dark-900/50 p-2.5 rounded-xl text-brand-500 font-bold outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                        defaultValue={globalData.appTitle2 || 'Y Salud'}
+                                                        onBlur={(e) => updateAppSetting('appTitle2', e.target.value)}
+                                                        placeholder="Ej: Fitness"
+                                                    />
+                                                </div>
                                             </div>
+
                                             <div>
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subtítulo</label>
-                                                <input 
-                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-brand-500 font-bold outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
-                                                    defaultValue={globalData.appTitle2 || 'Y Salud'}
-                                                    onBlur={(e) => updateAppSetting('appTitle2', e.target.value)}
-                                                    placeholder="Ej: Fitness"
-                                                />
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color de la Marca</label>
+                                                <div className="flex gap-2.5 mt-2 flex-wrap">
+                                                    {Object.keys(THEMES).map(themeName => {
+                                                        const isActive = globalData?.themeColor === themeName || (!globalData?.themeColor && themeName === 'green');
+                                                        return (
+                                                            <button 
+                                                                key={themeName} 
+                                                                onClick={() => updateAppSetting('themeColor', themeName)}
+                                                                className={`w-8 h-8 rounded-full border-2 transition-transform cursor-pointer ${isActive ? 'scale-110 border-white shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                                                style={{ backgroundColor: `rgb(${THEMES[themeName][500].split(' ').join(',')})` }}
+                                                                title={`Tema ${themeName}`}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                            <div>
+
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aviso Global para Alumnos</label>
+                                                <textarea 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600 resize-none"
+                                                    rows="2"
+                                                    defaultValue={globalData.globalAnnouncement || ''}
+                                                    onBlur={(e) => updateAppSetting('globalAnnouncement', e.target.value)}
+                                                    placeholder="Ej: Este feriado el gimnasio abre de 10 a 14hs..."
+                                                />
+                                                <p className="text-[9px] text-gray-500 mt-1">Se mostrará destacado al inicio de la app de cada alumno.</p>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PIN del Profesor</label>
                                                 <div className="flex gap-2 mt-1">
                                                     <input 
                                                         type="password" 
                                                         className="flex-1 bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm tracking-widest"
-                                                        placeholder="Nuevo PIN maestro..."
+                                                        placeholder="Nuevo PIN..."
                                                         id="newAdminPin"
                                                     />
                                                     <button onClick={() => {
@@ -1657,7 +1719,7 @@
                         <div className="app-container pb-24 relative z-10 bg-dark-900">
                             <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-10">
                                 <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-[10px] shadow-[0_0_15px_rgba(0,230,118,0.4)] border border-white/20 transform rotate-3">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-[10px] shadow-[0_0_15px_var(--brand-glow)] border border-white/20 transform rotate-3">
                                         <i className="fa-solid fa-dumbbell -rotate-3"></i>
                                     </div>
                                     <div className="flex flex-col leading-none">
@@ -1668,6 +1730,18 @@
                             </header>
 
                             <div className="p-5">
+                                {globalData?.globalAnnouncement && globalData.globalAnnouncement.trim() !== '' && (
+                                    <div className="mb-6 bg-brand-500/10 border border-brand-500/30 p-4 rounded-2xl flex gap-4 items-start shadow-inner">
+                                        <div className="w-10 h-10 shrink-0 bg-brand-500/20 rounded-full flex items-center justify-center text-brand-500">
+                                            <i className="fa-solid fa-bullhorn text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-brand-500 text-sm mb-1 uppercase tracking-wider">Aviso del Entrenador</h3>
+                                            <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-wrap">{globalData.globalAnnouncement}</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="mb-6 bg-dark-800/60 p-4 rounded-2xl border border-white/5">
                                     <h2 className="text-xl font-black text-white">Hola, {currentUser?.name || 'Atleta'}</h2>
                                     <p className="text-xs text-gray-400 mt-0.5">Seleccioná tu semana y a darlo todo.</p>
@@ -1736,7 +1810,7 @@
                                                     </div>
                                                     <div className="w-full bg-dark-950 rounded-full h-3.5 border border-dark-600 shadow-inner overflow-hidden">
                                                         <div 
-                                                            className="bg-gradient-to-r from-brand-600 to-brand-500 h-full rounded-full shadow-[0_0_10px_rgba(0,230,118,0.5)] animate-fill-bar"
+                                                            className="bg-gradient-to-r from-brand-600 to-brand-500 h-full rounded-full shadow-[0_0_10px_var(--brand-glow)] animate-fill-bar"
                                                             style={{ width: `${widthPercent}%` }}
                                                         ></div>
                                                     </div>
@@ -1763,7 +1837,7 @@
                             </header>
 
                             <div className="p-5 flex flex-col items-center mt-4">
-                                <div className="w-24 h-24 bg-gradient-to-br from-dark-800 to-dark-900 rounded-full flex items-center justify-center text-4xl font-black text-white border-2 border-brand-500/50 shadow-[0_0_20px_rgba(0,230,118,0.2)] mb-4">
+                                <div className="w-24 h-24 bg-gradient-to-br from-dark-800 to-dark-900 rounded-full flex items-center justify-center text-4xl font-black text-white border-2 border-brand-500/50 shadow-[0_0_20px_var(--brand-glow)] mb-4">
                                     {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                                 <h2 className="text-2xl font-black text-white">{currentUser?.name}</h2>
@@ -1962,7 +2036,7 @@
                                 </div>
 
                                 {restTime > 0 && (
-                                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-6 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_rgba(0,230,118,0.6)] flex items-center gap-3 z-50 animate-bounce cursor-pointer uppercase border border-white/20" onClick={() => setRestTime(0)}>
+                                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-6 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_var(--brand-glow-strong)] flex items-center gap-3 z-50 animate-bounce cursor-pointer uppercase border border-white/20" onClick={() => setRestTime(0)}>
                                         <i className="fa-solid fa-stopwatch animate-pulse text-lg"></i>
                                         Descanso: {Math.floor(restTime/60)}:{(restTime%60).toString().padStart(2,'0')}
                                         <div className="ml-1 bg-black/20 hover:bg-black/40 transition-colors rounded-xl w-6 h-6 flex items-center justify-center text-xs"><i className="fa-solid fa-xmark"></i></div>
