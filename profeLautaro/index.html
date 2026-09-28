@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0a0a0c">
-    <title>Panel Pro - App de Entrenamiento</title>
+    <title>Bravo Training - Panel</title>
     
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Entrenamiento%20y%20Salud%22%2C%22short_name%22%3A%22Training%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0c%22%2C%22theme_color%22%3A%22%230a0a0c%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2936%2F2936886.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Bravo%20Training%22%2C%22short_name%22%3A%22Bravo%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0c%22%2C%22theme_color%22%3A%22%230a0a0c%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2936%2F2936886.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v9';
+                const CACHE_NAME = 'bravo-pro-offline-v1';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -40,8 +40,8 @@
             const swUrl = URL.createObjectURL(blob);
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register(swUrl)
-                    .then(() => console.log('PWA: Modo Offline Agresivo Activado'))
-                    .catch(() => console.log('SW bypass normal en desarrollo'));
+                    .then(() => console.log('PWA: Modo Offline Activo'))
+                    .catch(() => console.log('SW bypass'));
             });
         }
 
@@ -84,19 +84,18 @@
     </script>
     <style>
         :root {
-            --brand-500: 0 230 118;
-            --brand-600: 0 184 92;
-            --brand-glow: rgba(0, 230, 118, 0.4);
-            --brand-glow-strong: rgba(0, 230, 118, 0.7);
+            --brand-500: 59 130 246; /* Azul deportivo por defecto */
+            --brand-600: 37 99 235;
+            --brand-glow: rgba(59, 130, 246, 0.4);
+            --brand-glow-strong: rgba(59, 130, 246, 0.7);
         }
         
-        /* BLOQUEO ESTRÍCTO DE SCROLL HORIZONTAL */
         html, body {
             overflow-x: hidden !important;
             width: 100%;
             position: relative;
-            overscroll-behavior-x: none; /* Evita que en iOS/Android rebote al deslizar horizontal */
-            touch-action: pan-y; /* Permite scroll vertical pero bloquea gestos horizontales nativos */
+            overscroll-behavior-x: none; 
+            touch-action: pan-y; 
             -webkit-tap-highlight-color: transparent; 
             background-color: #050507; 
             color: #f3f3f6; 
@@ -113,7 +112,7 @@
             border-right: 1px solid #1e1e24; 
             box-shadow: 0 0 50px rgba(0,0,0,0.9); 
             position: relative; 
-            overflow-x: hidden !important; /* Bloqueo estricto */
+            overflow-x: hidden !important; 
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -140,71 +139,97 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // ==========================================
-        // CONSTANTES DE LICENCIA DEL CLIENTE (B2B)
-        // ==========================================
-        const CLIENTE_ID = 'Lautaro_Bravo'; 
-        const MAX_CLIENTES = null; // Ilimitado
-        const FECHA_VENCIMIENTO = null; // Infinito
+        const CLIENTE_ID = 'lautaro-bravo-personal'; 
+        const MAX_CLIENTES = null; 
+        const FECHA_VENCIMIENTO = null; 
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const THEMES = {
-            green: { 500: '0 230 118', 600: '0 184 92', glow: 'rgba(0, 230, 118, 0.4)', glowStrong: 'rgba(0, 230, 118, 0.7)' },
             blue: { 500: '59 130 246', 600: '37 99 235', glow: 'rgba(59, 130, 246, 0.4)', glowStrong: 'rgba(59, 130, 246, 0.7)' },
+            green: { 500: '0 230 118', 600: '0 184 92', glow: 'rgba(0, 230, 118, 0.4)', glowStrong: 'rgba(0, 230, 118, 0.7)' },
             red: { 500: '239 68 68', 600: '220 38 38', glow: 'rgba(239, 68, 68, 0.4)', glowStrong: 'rgba(239, 68, 68, 0.7)' },
             purple: { 500: '168 85 247', 600: '147 51 234', glow: 'rgba(168, 85, 247, 0.4)', glowStrong: 'rgba(168, 85, 247, 0.7)' },
             orange: { 500: '249 115 22', 600: '234 88 12', glow: 'rgba(249, 115, 22, 0.4)', glowStrong: 'rgba(249, 115, 22, 0.7)' },
-            gold: { 500: '234 179 8', 600: '202 138 4', glow: 'rgba(234, 179, 8, 0.4)', glowStrong: 'rgba(234, 179, 8, 0.7)' },
-            pink: { 500: '236 72 153', 600: '219 39 119', glow: 'rgba(236, 72, 153, 0.4)', glowStrong: 'rgba(236, 72, 153, 0.7)' }
+            gold: { 500: '234 179 8', 600: '202 138 4', glow: 'rgba(234, 179, 8, 0.4)', glowStrong: 'rgba(234, 179, 8, 0.7)' }
         };
 
         const EXERCISE_CATALOG = [
-            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
-            { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
-            { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
-            { name: "Sentadilla A Una Pierna Asistida", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Usá un soporte (TRX, poste) para equilibrarte. Bajá con una sola pierna manteniendo el talón firme. Gran trabajo de estabilización." },
-            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Empuje vertical." },
-            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros o ligeramente más abiertos. Descenso profundo controlando la fase excéntrica y manteniendo el torso firme." },
-            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo al suelo. Mantené el torso firme." },
-            { name: "Peso Muerto Rumano", muscle: "Isquiosurales", equip: "Barra", description: "Flexión leve de rodillas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas." },
-            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo durante todo el recorrido." },
-            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso en la fase excéntrica (bajada controlada)." },
+            // --- PIERNAS: CUÁDRICEPS ---
+            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros. Descenso profundo controlando la fase excéntrica, manteniendo el torso firme y alineado." },
+            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Énfasis en un empuje más vertical." },
+            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran aislamiento de cuádriceps y exigencia del core." },
+            { name: "Sentadilla en Máquina Smith", muscle: "Cuádriceps", equip: "Máquina", description: "Adelantá ligeramente los pies. Bajá profundo controlando la fase excéntrica y subí empujando con toda la planta del pie. Ideal para sobrecarga segura." },
+            { name: "Hack Squat (Máquina)", muscle: "Cuádriceps", equip: "Máquina", description: "Espalda completamente apoyada. Pies centrados en la plataforma. Gran trabajo enfocado en los cuádriceps al eliminar la necesidad de estabilización del core." },
+            { name: "Sentadilla Sissy", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Mantené el torso alineado con los muslos. Flexioná las rodillas hacia adelante bajando la cadera hacia los talones. Máximo estiramiento del cuádriceps bajo tensión." },
+            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo. Torso ligeramente inclinado hacia adelante para involucrar también el glúteo." },
+            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", description: "Espalda completamente apoyada. Empujá con el talón y media planta. Rango de movimiento completo sin retroversión pélvica al fondo." },
+            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso (fase excéntrica controlada)." },
+            { name: "Zancadas / Estocadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "Un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
+
+            // --- PIERNAS: ISQUIOSURALES & GLÚTEOS ---
+            { name: "Peso Muerto Rumano (RDL)", muscle: "Isquiosurales", equip: "Barra", description: "Rodillas semi-rígidas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas durante todo el recorrido." },
+            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo." },
+            { name: "Peso Muerto Sumo", muscle: "Glúteos", equip: "Barra", description: "Pies bien separados, puntas hacia afuera. Agarre por dentro de las piernas. Mayor énfasis en aductores, glúteos y cuádriceps que el convencional." },
             { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina", description: "Cadera firme contra el banco. Flexioná llevando el rodillo hacia los glúteos y volvé lentamente sin soltar la tensión de golpe." },
-            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. No arquees la zona lumbar." },
-            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos en la plataforma. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción." },
-            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Mantené los pies firmes en el suelo." },
-            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas", description: "Banco a 30-45°. Retracción escapular. Bajá las mancuernas hasta la altura del pecho superior y empujá en un ligero arco hacia el centro." },
-            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No conviertas el movimiento en un press." },
-            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo, cruzando levemente las manos al final para máxima contracción del pectoral." },
-            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." },
-            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, apuntando los codos hacia abajo y atrás." },
-            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción. Mantené la zona lumbar neutra." },
-            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea", description: "Sentado, rodillas levemente flexionadas. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás." },
-            { name: "Press Militar", muscle: "Hombros", equip: "Barra", description: "De pie o sentado. Empujá la barra verticalmente sin usar impulso de las piernas. Contraé abdomen para proteger la lumbar." },
-            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Movimiento estricto." },
-            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados enfocando el esfuerzo en la parte posterior del hombro y trapecio." },
-            { name: "Curl de Bíceps", muscle: "Bíceps", equip: "Mancuernas", description: "Mantené los codos fijos a los costados del cuerpo. Subí contrayendo el bíceps y bajá de forma controlada (fase excéntrica)." },
-            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose). Subí manteniendo el codo fijo, ideal para trabajar el braquial y antebrazo junto al bíceps." },
-            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra", description: "Agarre cómodo en la curvatura de la barra. Evitá balanceos con el torso. Máxima tensión en el ascenso y retención en el descenso." },
-            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo contrayendo el tríceps. Subí hasta que el antebrazo pase los 90 grados." },
-            { name: "Press Francés", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo los codos. Extensión completa arriba." },
-            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido para enfocar en tríceps (o inclinado para pecho). Bajá hasta los 90 grados de codo y empujá verticalmente." },
-            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo contrayendo el abdomen. Movimiento corto enfocado en el core, sin tirar del cuello." },
-            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
-            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran enfoque en cuádriceps." },
-            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "De pie, un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
-            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." },
-            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás, reteniendo en la subida." },
-            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea", description: "Tobillera puesta. Torso firme. Extensión de cadera hacia atrás contrayendo el glúteo en el punto máximo. No uses la zona lumbar." },
-            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." },
-            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina", description: "Pecho apoyado (o de pie inclinado). Traccioná llevando los codos hacia atrás y arriba, maximizando el grosor de la espalda." },
-            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Gran recorrido articular." },
-            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda. Traccioná hacia tu cara separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para postura y hombro posterior." },
-            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps eliminando cualquier balanceo. No extiendas el codo al 100% abajo por seguridad." },
-            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro y la cadera retrovertida. Volvé usando la fuerza del core." }
+            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás. Biomecánicamente óptimo por el estiramiento previo del isquio." },
+            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. Mantené la barbilla pegada al pecho." },
+            { name: "Puente de Glúteos (Glute Bridge)", muscle: "Glúteos", equip: "Barra", description: "Tumbado en el suelo. Menor rango de recorrido que el Hip Thrust, permite mover más carga enfocándose puramente en la contracción final." },
+
+            // --- PIERNAS: GEMELOS ---
+            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción. Trabaja el gastrocnemio." },
+            { name: "Elevación de Talones Sentado", muscle: "Gemelos", equip: "Máquina", description: "Rodillas flexionadas a 90°. Aísla y enfoca el trabajo en el músculo sóleo. Pausa de 1 segundo en la contracción máxima y en el estiramiento." },
+
+            // --- PECHO ---
+            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Leg drive activo (pies empujando el suelo)." },
+            { name: "Press Inclinado con Barra", muscle: "Pecho", equip: "Barra", description: "Banco a 30-45°. Retracción escapular. Bajá la barra a la parte superior del pecho (clavículas). Mayor énfasis en el haz clavicular del pectoral." },
+            { name: "Press Inclinado con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Permite mayor rango de recorrido y libertad articular que la barra. Empujá en un ligero arco hacia el centro." },
+            { name: "Press de Banca Agarre Cerrado", muscle: "Pecho", equip: "Barra", description: "Agarre a la anchura de los hombros. Codos rozando el torso al bajar. Énfasis masivo en tríceps y haz esternocostal del pecho." },
+            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No lo conviertas en un press." },
+            { name: "Pec Deck (Máquina de Aperturas)", muscle: "Pecho", equip: "Máquina", description: "Aísla el pectoral. Mantené el pecho arriba y las escápulas retraídas. Aprieta un segundo al juntar las manos en el centro." },
+            { name: "Cruce de Poleas (Polea Alta)", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo. Excelente para la porción inferior del pecho." },
+
+            // --- ESPALDA ---
+            { name: "Dominadas (Pronas)", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." },
+            { name: "Dominadas Supinas (Chin-ups)", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." },
+            { name: "Jalón al Pecho (Polea Alta)", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, codos hacia abajo y atrás." },
+            { name: "Remo con Barra (Pendlay)", muscle: "Espalda", equip: "Barra", description: "Torso paralelo al suelo. La barra descansa en el suelo en cada repetición. Tracción explosiva hacia el abdomen inferior." },
+            { name: "Remo con Barra (Tradicional)", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a 45-60 grados. Traccioná hacia el ombligo, juntando las escápulas. Tensión constante, la barra no toca el suelo." },
+            { name: "Remo con Mancuerna a 1 Mano", muscle: "Espalda", equip: "Mancuernas", description: "Apoyo en banco (mano y rodilla). Traccioná llevando la mancuerna hacia la cadera, rozando el torso con el codo. Gran rango de recorrido." },
+            { name: "Remo Gironda (Polea Baja)", muscle: "Espalda", equip: "Polea", description: "Sentado. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás (retracción escapular)." },
+            { name: "Remo en Máquina (Sentado)", muscle: "Espalda", equip: "Máquina", description: "Pecho firmemente apoyado en la almohadilla. Permite aislar la espalda eliminando la fatiga lumbar. Tracción controlada." },
+            { name: "Pull-over en Polea Alta (Brazos Rígidos)", muscle: "Espalda", equip: "Polea", description: "De pie, brazos semi-rectos. Empujá la barra/cuerda desde la altura de los ojos hasta las piernas utilizando pura fuerza de dorsales." },
+
+            // --- HOMBROS ---
+            { name: "Press Militar con Barra", muscle: "Hombros", equip: "Barra", description: "De pie. Empujá la barra verticalmente desde las clavículas sin usar impulso de las piernas. Contraé abdomen y glúteos para proteger la lumbar." },
+            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara a altura del pecho. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Trabajo completo de deltoides." },
+            { name: "Press de Hombros Sentado (Mancuernas)", muscle: "Hombros", equip: "Mancuernas", description: "Banco a 90°. Desciende hasta que las mancuernas toquen casi los hombros y empujá vertical. Aísla los hombros eliminando el balanceo." },
+            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Puro trabajo de deltoides medio." },
+            { name: "Elevaciones Laterales en Polea", muscle: "Hombros", equip: "Polea", description: "El cable provee tensión constante incluso en la parte baja del movimiento, a diferencia de las mancuernas. Gran estímulo de hipertrofia." },
+            { name: "Pájaros (Deltoides Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados. Enfoca el esfuerzo en la parte posterior del hombro." },
+            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda a la altura de la cara. Traccioná separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para salud articular." },
+
+            // --- BÍCEPS ---
+            { name: "Curl de Bíceps con Barra (Recta)", muscle: "Bíceps", equip: "Barra", description: "Agarre supino al ancho de hombros. Movimiento estricto, codos fijos a los costados. Máxima carga soportada para el bíceps." },
+            { name: "Curl de Bíceps con Mancuernas (Alterno)", muscle: "Bíceps", equip: "Mancuernas", description: "Subí una mancuerna a la vez, supinando la muñeca (girando la palma hacia arriba) durante el ascenso para máxima contracción." },
+            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose). Trabaja fuertemente el músculo braquial (da grosor al brazo) y el braquiorradial (antebrazo)." },
+            { name: "Curl Predicador (Scott)", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps. No extiendas el codo al 100% abajo para evitar lesiones en el tendón." },
+            { name: "Curl Inclinado con Mancuernas", muscle: "Bíceps", equip: "Mancuernas", description: "Sentado en banco a 45°. El bíceps parte desde una posición de máximo estiramiento. Rango de movimiento amplio y estricto." },
+
+            // --- TRÍCEPS ---
+            { name: "Press Francés (Rompecráneos)", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo codos. Gran estiramiento de la cabeza larga." },
+            { name: "Extensión de Tríceps en Polea (Barra Recta/V)", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo. Subí controladamente hasta pasar los 90 grados." },
+            { name: "Extensión de Tríceps con Cuerda", muscle: "Tríceps", equip: "Polea", description: "Igual que con barra, pero al final del movimiento separá las manos hacia afuera (pronación) para contraer a tope las cabezas laterales." },
+            { name: "Tríceps Copa (Extensión por encima de la cabeza)", muscle: "Tríceps", equip: "Mancuernas", description: "Sentado. Sujetá una mancuerna con ambas manos por detrás de la cabeza. Extendé verticalmente. Focaliza la cabeza larga del tríceps." },
+            { name: "Fondos en Paralelas (Dips)", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido (vertical). Bajá hasta los 90 grados de codo y empujá. Para enfocar en tríceps los codos deben ir pegados al cuerpo." },
+
+            // --- ABDOMEN / CORE ---
+            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo despegando las escápulas. Movimiento corto enfocado en flexionar la columna (el core), no el cuello." },
+            { name: "Plancha Isométrica (Plank)", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos. Cuerpo en línea recta. Apretá glúteos y abdomen (retroversión pélvica) durante todo el tiempo para evitar curvar la lumbar." },
+            { name: "Elevación de Piernas Colgado", muscle: "Abdomen", equip: "Peso Corporal", description: "Colgado de la barra. Subí las rodillas (o piernas rectas) hacia el pecho, buscando enrollar la pelvis hacia arriba para contraer el abdomen inferior." },
+            { name: "Rueda Abdominal (Ab Wheel)", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro (sin dejar que caiga la cadera). Volvé usando la fuerza de flexión del core." }
         ];
 
         let audioCtx = null;
@@ -441,7 +466,6 @@
             const handleWeekConfigChange = (weekNum, field, value) => {
                 const updatedWeeks = JSON.parse(JSON.stringify(localEx.weeks || {}));
                 if (!updatedWeeks[weekNum]) {
-                    // Inicializa con los valores genéricos, pero ahora RIR también viaja acá
                     updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10', rir: localEx.rir ?? '2' };
                 }
                 updatedWeeks[weekNum][field] = value;
@@ -980,12 +1004,10 @@
                 return () => clearInterval(restInterval);
             }, [restTime > 0, restTimerKey]);
 
-            // MANEJO DE HISTORY API PARA BLOQUEAR EL GESTO/BOTÓN DE ATRÁS EN ENTRENAMIENTO
             useEffect(() => {
                 const handlePopState = (e) => {
                     if (view === 'cliente_entrenamiento' && isTrainingStarted) {
                         if (!window.confirm("¿Seguro que querés salir del entrenamiento en curso? Perderás el cronómetro.")) {
-                            // Si cancela, volvemos a empujar el estado para mantener la trampa
                             window.history.pushState(null, '', window.location.href);
                         } else {
                             setIsTrainingStarted(false);
@@ -1065,7 +1087,19 @@
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {} };
+                    
+                    let dbData = data?.data || { 
+                        profesorPin: '0000', 
+                        appTitle1: 'Bravo', 
+                        appTitle2: 'Training', 
+                        profesorName: 'Lautaro Bravo', 
+                        themeColor: 'blue',
+                        globalAnnouncement: 'Recordatorio semanal: Prepará tu termito, y no te olvides del scoop de creatina y la whey protein de Star Nutrition post-entreno.',
+                        clients: [], 
+                        routines: {}, 
+                        progress: {} 
+                    };
+
                     setGlobalData(dbData);
                     
                     const savedSession = localStorage.getItem(`bravo_session_${CLIENTE_ID}`);
@@ -1087,7 +1121,7 @@
                     }
                 } catch (e) { 
                     console.error(e);
-                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {} });
+                    setGlobalData({ profesorPin: '0000', appTitle1: 'Bravo', appTitle2: 'Training', profesorName: 'Lautaro Bravo', clients: [], routines: {}, progress: {} });
                 }
                 setLoading(false);
             };
@@ -1115,7 +1149,7 @@
                 if (!newClientName.trim()) return;
 
                 if (MAX_CLIENTES !== null && (globalData.clients?.length || 0) >= MAX_CLIENTES) {
-                    showToast(`Límite de licencia alcanzado (${MAX_CLIENTES} alumnos). Renovación requerida.`, 'error');
+                    showToast(`Límite de licencia alcanzado (${MAX_CLIENTES} alumnos).`, 'error');
                     return;
                 }
 
@@ -1396,8 +1430,7 @@
                 });
             };
 
-            // Cálculo dinámico del tema
-            const currentTheme = THEMES[globalData?.themeColor] || THEMES.green;
+            const currentTheme = THEMES[globalData?.themeColor] || THEMES.blue;
             const appStyleVars = {
                 '--brand-500': currentTheme[500],
                 '--brand-600': currentTheme[600],
@@ -1470,8 +1503,8 @@
                                     <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_var(--brand-glow-strong)] -rotate-3"></i>
                                 </div>
                                 
-                                <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-0.5 drop-shadow-lg">{globalData?.appTitle1 || 'Entrenamiento'}</h1>
-                                <h2 className="text-xl font-bold text-brand-500 tracking-[0.2em] uppercase drop-shadow-md">{globalData?.appTitle2 || 'Y Salud'}</h2>
+                                <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-0.5 drop-shadow-lg">{globalData?.appTitle1 || 'Bravo'}</h1>
+                                <h2 className="text-xl font-bold text-brand-500 tracking-[0.2em] uppercase drop-shadow-md">{globalData?.appTitle2 || 'Training'}</h2>
                                 <p className="text-[10px] text-gray-300 font-black tracking-widest mt-4 uppercase border-t border-white/20 pt-4 mx-auto w-3/4 opacity-90">Rendimiento & Biomecánica</p>
                             </div>
                             
@@ -1607,7 +1640,7 @@
                             ) : (
                                 <>
                                     <header className="p-5 flex justify-between items-center glass-header sticky top-0 z-10">
-                                        <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
+                                        <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Lautaro</h2>
                                         <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
                                     </header>
                                     
@@ -1616,7 +1649,7 @@
                                         <div className="grid grid-cols-2 gap-4 mb-6">
                                             <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
                                                 <span className="text-3xl font-black text-brand-500">{globalData.clients?.length || 0}</span>
-                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Alumnos Activos</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Atletas Activos</span>
                                             </div>
                                             <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
                                                 <span className="text-3xl font-black text-white">{Object.values(globalData.routines || {}).reduce((acc, curr) => acc + curr.length, 0)}</span>
@@ -1625,29 +1658,29 @@
                                         </div>
 
                                         <div className="flex gap-2 bg-dark-800/80 p-2 rounded-2xl border border-white/5 shadow-inner mb-6">
-                                            <input className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" placeholder="Nuevo alumno..." value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                                            <input className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" placeholder="Nuevo atleta..." value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
                                             <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/30 font-bold"><i className="fa-solid fa-plus"></i></button>
                                         </div>
 
-                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Marca Blanca)</h3>
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Personalizada)</h3>
                                         <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4 shadow-md mb-6">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título App</label>
                                                     <input 
                                                         className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
-                                                        defaultValue={globalData.appTitle1 || 'Entrenamiento'}
+                                                        defaultValue={globalData.appTitle1 || 'Bravo'}
                                                         onBlur={(e) => updateAppSetting('appTitle1', e.target.value)}
-                                                        placeholder="Ej: Alpha"
+                                                        placeholder="Ej: Bravo"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subtítulo</label>
                                                     <input 
                                                         className="w-full bg-dark-900/50 p-2.5 rounded-xl text-brand-500 font-bold outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
-                                                        defaultValue={globalData.appTitle2 || 'Y Salud'}
+                                                        defaultValue={globalData.appTitle2 || 'Training'}
                                                         onBlur={(e) => updateAppSetting('appTitle2', e.target.value)}
-                                                        placeholder="Ej: Fitness"
+                                                        placeholder="Ej: Training"
                                                     />
                                                 </div>
                                             </div>
@@ -1656,18 +1689,17 @@
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nombre del Entrenador</label>
                                                 <input 
                                                     className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
-                                                    defaultValue={globalData.profesorName || ''}
+                                                    defaultValue={globalData.profesorName || 'Lautaro Bravo'}
                                                     onBlur={(e) => updateAppSetting('profesorName', e.target.value)}
                                                     placeholder="Ej: Lautaro Bravo"
                                                 />
-                                                <p className="text-[9px] text-gray-500 mt-1">Este nombre aparecerá en la sección de perfil de tus alumnos.</p>
                                             </div>
 
                                             <div className="border-t border-dark-700 pt-3">
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color de la Marca</label>
                                                 <div className="flex gap-2.5 mt-2 flex-wrap">
                                                     {Object.keys(THEMES).map(themeName => {
-                                                        const isActive = globalData?.themeColor === themeName || (!globalData?.themeColor && themeName === 'green');
+                                                        const isActive = globalData?.themeColor === themeName || (!globalData?.themeColor && themeName === 'blue');
                                                         return (
                                                             <button 
                                                                 key={themeName} 
@@ -1682,15 +1714,14 @@
                                             </div>
 
                                             <div className="border-t border-dark-700 pt-3">
-                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aviso Global para Alumnos</label>
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aviso Global para Atletas</label>
                                                 <textarea 
                                                     className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600 resize-none"
                                                     rows="2"
                                                     defaultValue={globalData.globalAnnouncement || ''}
                                                     onBlur={(e) => updateAppSetting('globalAnnouncement', e.target.value)}
-                                                    placeholder="Ej: Este feriado el gimnasio abre de 10 a 14hs..."
+                                                    placeholder="Ej: Recordatorio sobre la suplementación y alimentación..."
                                                 />
-                                                <p className="text-[9px] text-gray-500 mt-1">Se mostrará destacado al inicio de la app de cada alumno.</p>
                                             </div>
 
                                             <div className="border-t border-dark-700 pt-3">
@@ -1716,10 +1747,10 @@
                                             </div>
                                         </div>
 
-                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos</h3>
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Atletas</h3>
                                         
                                         {globalData.clients?.length === 0 && (
-                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay atletas creados.</div>
                                         )}
 
                                         {globalData.clients?.map(client => (
@@ -1750,8 +1781,8 @@
                                         <i className="fa-solid fa-dumbbell -rotate-3"></i>
                                     </div>
                                     <div className="flex flex-col leading-none">
-                                        <span className="uppercase tracking-wider text-[11px]">{globalData?.appTitle1 || 'Entrenamiento'}</span>
-                                        <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Y Salud'}</span>
+                                        <span className="uppercase tracking-wider text-[11px]">{globalData?.appTitle1 || 'Bravo'}</span>
+                                        <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Training'}</span>
                                     </div>
                                 </h1>
                             </header>
@@ -1772,6 +1803,16 @@
                                 <div className="mb-6 bg-dark-800/60 p-4 rounded-2xl border border-white/5">
                                     <h2 className="text-xl font-black text-white">Hola, {currentUser?.name || 'Atleta'}</h2>
                                     <p className="text-xs text-gray-400 mt-0.5">Seleccioná tu semana y a darlo todo.</p>
+                                </div>
+
+                                <div className="mb-6 flex gap-3 overflow-x-auto hide-scrollbar">
+                                    <div className="bg-dark-800 border border-white/5 rounded-xl p-3 flex items-center gap-3 shrink-0">
+                                        <i className="fa-brands fa-spotify text-green-500 text-2xl"></i>
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Escuchando en entreno</p>
+                                            <p className="text-xs font-bold text-white">Patricio Rey y sus Redonditos, Mora</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-3">Seleccionar semana</h3>
@@ -1942,12 +1983,11 @@
                                     <i className="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
                                 </button>
                                 
-                                <p className="text-center text-[10px] text-gray-600 font-black tracking-widest uppercase mt-6">Panel Pro v2.0</p>
+                                <p className="text-center text-[10px] text-gray-600 font-black tracking-widest uppercase mt-6">Panel Lautaro Bravo v2.0</p>
                             </div>
                         </div>
                     )}
 
-                    {/* BARRA DE NAVEGACIÓN INFERIOR */}
                     {view.startsWith('cliente_') && view !== 'cliente_entrenamiento' && (
                         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 pb-5 z-20">
                             <button onClick={() => setView('cliente_listado')} className={`${view === 'cliente_listado' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
