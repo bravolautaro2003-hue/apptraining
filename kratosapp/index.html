@@ -95,8 +95,8 @@
             overflow-x: hidden !important;
             width: 100%;
             position: relative;
-            overscroll-behavior-x: none; 
-            touch-action: pan-y; 
+            overscroll-behavior-x: none; /* Evita que en iOS/Android rebote al deslizar horizontal */
+            touch-action: pan-y; /* Permite scroll vertical pero bloquea gestos horizontales nativos */
             -webkit-tap-highlight-color: transparent; 
             background-color: #050507; 
             color: #f3f3f6; 
@@ -113,7 +113,7 @@
             border-right: 1px solid #1e1e24; 
             box-shadow: 0 0 50px rgba(0,0,0,0.9); 
             position: relative; 
-            overflow-x: hidden !important; 
+            overflow-x: hidden !important; /* Bloqueo estricto */
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -162,113 +162,49 @@
         };
 
         const EXERCISE_CATALOG = [
-            // --- PIERNAS: CUÁDRICEPS ---
-            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros. Descenso profundo controlando la fase excéntrica, manteniendo el torso firme y alineado." },
-            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Énfasis en un empuje más vertical." },
-            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran aislamiento de cuádriceps y exigencia del core." },
-            { name: "Sentadilla en Máquina Smith", muscle: "Cuádriceps", equip: "Máquina", description: "Adelantá ligeramente los pies. Bajá profundo controlando la fase excéntrica y subí empujando con toda la planta del pie. Ideal para sobrecarga segura." },
-            { name: "Hack Squat (Máquina)", muscle: "Cuádriceps", equip: "Máquina", description: "Espalda completamente apoyada. Pies centrados en la plataforma. Gran trabajo enfocado en los cuádriceps al eliminar la necesidad de estabilización del core." },
-            { name: "Sentadilla Sissy", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Mantené el torso alineado con los muslos. Flexioná las rodillas hacia adelante bajando la cadera hacia los talones. Máximo estiramiento del cuádriceps bajo tensión." },
-            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo. Torso ligeramente inclinado hacia adelante para involucrar también el glúteo." },
-            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Espalda completamente apoyada. Empujá con el talón y media planta. Rango de movimiento completo sin retroversión pélvica al fondo." },
+            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." },
             { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." },
-            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." },
-            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso (fase excéntrica controlada)." },
-            { name: "Zancadas / Estocadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "Un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
-            { name: "Zancadas / Estocadas Caminando", muscle: "Cuádriceps", equip: "Mancuernas", description: "Paso largo para enfatizar glúteo, paso corto para cuádriceps. Mantené el torso firme y evitá que la rodilla colapse hacia adentro (valgo)." },
-            { name: "Sentadilla Goblet", muscle: "Cuádriceps", equip: "Mancuernas", description: "Sujetá una mancuerna o kettlebell a la altura del pecho. Ayuda a mantener el torso erguido. Excelente para mejorar la técnica de sentadilla." },
-            { name: "Step-Ups (Subidas al cajón)", muscle: "Cuádriceps", equip: "Mancuernas", description: "Pie firme en el cajón. Subí aplicando toda la fuerza con la pierna elevada, minimizando el impulso con la pierna del suelo. Descenso lento." },
-
-            // --- PIERNAS: ISQUIOSURALES & GLÚTEOS ---
-            { name: "Peso Muerto Rumano (RDL)", muscle: "Isquiosurales", equip: "Barra", description: "Rodillas semi-rígidas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas durante todo el recorrido." },
-            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo." },
-            { name: "Peso Muerto Sumo", muscle: "Glúteos", equip: "Barra", description: "Pies bien separados, puntas hacia afuera. Agarre por dentro de las piernas. Mayor énfasis en aductores, glúteos y cuádriceps que el convencional." },
-            { name: "Peso Muerto Piernas Rígidas", muscle: "Isquiosurales", equip: "Barra", description: "Similar al rumano pero con las rodillas casi bloqueadas (sin flexionar al bajar). Exige máxima flexibilidad y aísla fuertemente el isquiosural." },
+            { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." },
+            { name: "Sentadilla A Una Pierna Asistida", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Usá un soporte (TRX, poste) para equilibrarte. Bajá con una sola pierna manteniendo el talón firme. Gran trabajo de estabilización." },
+            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Empuje vertical." },
+            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros o ligeramente más abiertos. Descenso profundo controlando la fase excéntrica y manteniendo el torso firme." },
+            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo al suelo. Mantené el torso firme." },
+            { name: "Peso Muerto Rumano", muscle: "Isquiosurales", equip: "Barra", description: "Flexión leve de rodillas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas." },
+            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo durante todo el recorrido." },
+            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso en la fase excéntrica (bajada controlada)." },
             { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina", description: "Cadera firme contra el banco. Flexioná llevando el rodillo hacia los glúteos y volvé lentamente sin soltar la tensión de golpe." },
-            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás. Biomecánicamente óptimo por el estiramiento previo del isquio." },
-            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. Mantené la barbilla pegada al pecho." },
-            { name: "Puente de Glúteos (Glute Bridge)", muscle: "Glúteos", equip: "Barra", description: "Tumbado en el suelo. Menor rango de recorrido que el Hip Thrust, permite mover más carga enfocándose puramente en la contracción final." },
-            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea", description: "Torso firme. Extensión de cadera hacia atrás contrayendo el glúteo en el punto máximo. No uses la zona lumbar para compensar." },
-            { name: "Abducción de Cadera (Máquina)", muscle: "Glúteos", equip: "Máquina", description: "Sentado, empujá las almohadillas hacia afuera. Trabaja intensamente el glúteo medio. Podés inclinar el torso hacia adelante para variar el estímulo." },
-            { name: "Aducción de Cadera (Máquina)", muscle: "Aductores", equip: "Máquina", description: "Sentado, juntá las piernas venciendo la resistencia. Movimiento controlado, evitando rebotar al abrir las piernas en la fase excéntrica." },
-            { name: "Buenos Días (Good Mornings)", muscle: "Isquiosurales", equip: "Barra", description: "Barra en la espalda (posición de sentadilla). Bisagra de cadera empujando los glúteos hacia atrás manteniendo la espalda neutra." },
-
-            // --- PIERNAS: GEMELOS ---
-            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción. Trabaja el gastrocnemio." },
-            { name: "Elevación de Talones Sentado", muscle: "Gemelos", equip: "Máquina", description: "Rodillas flexionadas a 90°. Aísla y enfoca el trabajo en el músculo sóleo. Pausa de 1 segundo en la contracción máxima y en el estiramiento." },
-            { name: "Elevación de Talones en Prensa", muscle: "Gemelos", equip: "Máquina", description: "Usando la prensa 45°. Piernas extendidas (sin bloquear rodillas). Gran capacidad para cargar peso de forma segura para el gastrocnemio." },
-
-            // --- PECHO ---
-            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Leg drive activo (pies empujando el suelo)." },
-            { name: "Press Inclinado con Barra", muscle: "Pecho", equip: "Barra", description: "Banco a 30-45°. Retracción escapular. Bajá la barra a la parte superior del pecho (clavículas). Mayor énfasis en el haz clavicular del pectoral." },
-            { name: "Press Inclinado con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Permite mayor rango de recorrido y libertad articular que la barra. Empujá en un ligero arco hacia el centro." },
-            { name: "Press Declinado", muscle: "Pecho", equip: "Barra", description: "Banco con inclinación negativa. Excelente para mover grandes cargas y estimular la porción inferior del pectoral mayor." },
-            { name: "Press de Banca Agarre Cerrado", muscle: "Pecho", equip: "Barra", description: "Agarre a la anchura de los hombros. Codos rozando el torso al bajar. Énfasis masivo en tríceps y haz esternocostal del pecho." },
-            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No lo conviertas en un press." },
-            { name: "Pec Deck (Máquina de Aperturas)", muscle: "Pecho", equip: "Máquina", description: "Aísla el pectoral. Mantené el pecho arriba y las escápulas retraídas. Aprieta un segundo al juntar las manos en el centro." },
-            { name: "Cruce de Poleas (Polea Alta)", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo. Excelente para la porción inferior del pecho." },
-            { name: "Cruce de Poleas (Polea Baja)", muscle: "Pecho", equip: "Polea", description: "Tirando desde abajo hacia arriba (altura de los ojos). Gran estímulo para el haz clavicular (pecho superior)." },
-            { name: "Flexiones de Brazos (Push-ups)", muscle: "Pecho", equip: "Peso Corporal", description: "Cuerpo en línea recta, core contraído. Manos un poco más abiertas que el ancho de hombros. Rango completo (pecho roza el suelo)." },
-            { name: "Flexiones Diamante", muscle: "Tríceps", equip: "Peso Corporal", description: "Manos juntas formando un diamante bajo el pecho. Transfiere el esfuerzo del pectoral hacia el tríceps de forma intensa." },
-            { name: "Pullover con Mancuerna", muscle: "Pecho", equip: "Mancuernas", description: "Tumbado transversalmente en un banco. Bajá la mancuerna por detrás de la cabeza manteniendo codos semi-flexionados. Expande la caja torácica." },
-
-            // --- ESPALDA ---
-            { name: "Dominadas (Pronas)", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." },
-            { name: "Dominadas Supinas (Chin-ups)", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." },
-            { name: "Dominadas Neutras", muscle: "Espalda", equip: "Peso Corporal", description: "Palmas mirándose entre sí. Posición biomecánicamente muy segura para los hombros, excelente reclutamiento del dorsal ancho." },
-            { name: "Jalón al Pecho (Polea Alta)", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, codos hacia abajo y atrás." },
-            { name: "Jalón al Pecho Agarre Cerrado (Triángulo)", muscle: "Espalda", equip: "Polea", description: "Agarre neutro cerrado. Permite un gran rango de recorrido, llevando el agarre hasta el esternón. Gran trabajo de la espalda media." },
-            { name: "Remo con Barra (Pendlay)", muscle: "Espalda", equip: "Barra", description: "Torso paralelo al suelo. La barra descansa en el suelo en cada repetición. Tracción explosiva hacia el abdomen inferior." },
-            { name: "Remo con Barra (Tradicional)", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a 45-60 grados. Traccioná hacia el ombligo, juntando las escápulas. Tensión constante, la barra no toca el suelo." },
-            { name: "Remo con Mancuerna a 1 Mano", muscle: "Espalda", equip: "Mancuernas", description: "Apoyo en banco (mano y rodilla). Traccioná llevando la mancuerna hacia la cadera, rozando el torso con el codo. Gran rango de recorrido." },
-            { name: "Remo Gironda (Polea Baja)", muscle: "Espalda", equip: "Polea", description: "Sentado. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás (retracción escapular)." },
-            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina", description: "Pecho apoyado (o libre). Traccioná llevando los codos hacia atrás y arriba, maximizando el grosor de la espalda (trapecio y romboides)." },
-            { name: "Remo en Máquina (Sentado)", muscle: "Espalda", equip: "Máquina", description: "Pecho firmemente apoyado en la almohadilla. Permite aislar la espalda eliminando la fatiga lumbar. Tracción controlada." },
-            { name: "Pull-over en Polea Alta (Brazos Rígidos)", muscle: "Espalda", equip: "Polea", description: "De pie, brazos semi-rectos. Empujá la barra/cuerda desde la altura de los ojos hasta las piernas utilizando pura fuerza de dorsales." },
-            { name: "Shrugs (Encogimientos) con Mancuernas", muscle: "Espalda", equip: "Mancuernas", description: "De pie, brazos extendidos. Elevá los hombros hacia las orejas contrayendo fuertemente los trapecios. Bajada controlada." },
-            { name: "Extensiones Lumbares (Silla Romana)", muscle: "Espalda Baja", equip: "Máquina", description: "Sujetá la cadera en las almohadillas. Flexioná el torso hacia abajo y extendé hasta quedar alineado. No hiperextiendas hacia atrás." },
-
-            // --- HOMBROS ---
-            { name: "Press Militar con Barra", muscle: "Hombros", equip: "Barra", description: "De pie. Empujá la barra verticalmente desde las clavículas sin usar impulso de las piernas. Contraé abdomen y glúteos para proteger la lumbar." },
-            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara a altura del pecho. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Trabajo completo de deltoides." },
-            { name: "Press de Hombros Sentado (Mancuernas)", muscle: "Hombros", equip: "Mancuernas", description: "Banco a 90°. Desciende hasta que las mancuernas toquen casi los hombros y empujá vertical. Aísla los hombros eliminando el balanceo." },
-            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Puro trabajo de deltoides medio." },
-            { name: "Elevaciones Laterales en Polea", muscle: "Hombros", equip: "Polea", description: "El cable provee tensión constante incluso en la parte baja del movimiento, a diferencia de las mancuernas. Gran estímulo de hipertrofia." },
-            { name: "Elevaciones Frontales", muscle: "Hombros", equip: "Mancuernas", description: "Subí las mancuernas (o disco/barra) hacia el frente hasta la altura de los ojos. Trabajo directo para el deltoides anterior." },
-            { name: "Pájaros (Deltoides Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados. Enfoca el esfuerzo en la parte posterior del hombro." },
-            { name: "Vuelos Posteriores en Máquina (Pec Deck Inverso)", muscle: "Hombros", equip: "Máquina", description: "Sentado mirando hacia la máquina. Brazos extendidos hacia atrás. Aísla el deltoides posterior de forma muy estricta y segura." },
-            { name: "Remo al Mentón (Upright Row)", muscle: "Hombros", equip: "Barra", description: "Agarre al ancho de hombros. Traccioná la barra verticalmente pegada al cuerpo liderando el movimiento con los codos hacia arriba." },
-            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda a la altura de la cara. Traccioná separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para salud articular." },
-
-            // --- BÍCEPS ---
-            { name: "Curl de Bíceps con Barra (Recta)", muscle: "Bíceps", equip: "Barra", description: "Agarre supino al ancho de hombros. Movimiento estricto, codos fijos a los costados. Máxima carga soportada para el bíceps." },
-            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra", description: "Agarre en la curvatura (semi-supinado). Alivia la tensión en las muñecas comparado con la barra recta." },
-            { name: "Curl de Bíceps con Mancuernas (Alterno)", muscle: "Bíceps", equip: "Mancuernas", description: "Subí una mancuerna a la vez, supinando la muñeca (girando la palma hacia arriba) durante el ascenso para máxima contracción." },
-            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose). Trabaja fuertemente el músculo braquial (da grosor al brazo) y el braquiorradial (antebrazo)." },
-            { name: "Curl Predicador (Scott)", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps. No extiendas el codo al 100% abajo para evitar lesiones en el tendón." },
-            { name: "Curl Inclinado con Mancuernas", muscle: "Bíceps", equip: "Mancuernas", description: "Sentado en banco a 45°. El bíceps parte desde una posición de máximo estiramiento. Rango de movimiento amplio y estricto." },
-            { name: "Curl Araña (Spider Curl)", muscle: "Bíceps", equip: "Mancuernas", description: "Pecho apoyado en banco inclinado (boca abajo). Los brazos cuelgan rectos. El enfoque está en la contracción máxima del pico del bíceps (fase concéntrica)." },
-            { name: "Curl en Polea Baja", muscle: "Bíceps", equip: "Polea", description: "Tensión mecánica constante a lo largo de todo el recorrido. Podés usar barra recta, cuerda (martillo) o maneral a una mano." },
-            { name: "Curl Concentrado", muscle: "Bíceps", equip: "Mancuernas", description: "Sentado, codo apoyado en la cara interna del muslo. Movimiento lento y enfocado en apretar el bíceps en el punto máximo." },
-
-            // --- TRÍCEPS ---
-            { name: "Press Francés (Rompecráneos)", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo codos. Gran estiramiento de la cabeza larga." },
-            { name: "Extensión de Tríceps en Polea (Barra Recta/V)", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo. Subí controladamente hasta pasar los 90 grados." },
-            { name: "Extensión de Tríceps con Cuerda", muscle: "Tríceps", equip: "Polea", description: "Igual que con barra, pero al final del movimiento separá las manos hacia afuera (pronación) para contraer a tope las cabezas laterales." },
-            { name: "Tríceps Copa (Extensión por encima de la cabeza)", muscle: "Tríceps", equip: "Mancuernas", description: "Sentado. Sujetá una mancuerna con ambas manos por detrás de la cabeza. Extendé verticalmente. Focaliza la cabeza larga del tríceps." },
-            { name: "Extensión de Tríceps a 1 Mano en Polea (Inversa)", muscle: "Tríceps", equip: "Polea", description: "Agarre supino (palma hacia arriba). Excelente para aislar el tríceps y equilibrar descompensaciones entre brazos." },
-            { name: "Fondos en Paralelas (Dips)", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido (vertical). Bajá hasta los 90 grados de codo y empujá. Para enfocar en tríceps los codos deben ir pegados al cuerpo." },
-            { name: "Patada de Tríceps", muscle: "Tríceps", equip: "Mancuernas", description: "Torso paralelo al suelo. Brazo superior fijo al torso. Extendé el antebrazo hacia atrás. Poco peso, máxima concentración." },
-
-            // --- ABDOMEN / CORE ---
-            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo despegando las escápulas. Movimiento corto enfocado en flexionar la columna (el core), no el cuello." },
-            { name: "Plancha Isométrica (Plank)", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos. Cuerpo en línea recta. Apretá glúteos y abdomen (retroversión pélvica) durante todo el tiempo para evitar curvar la lumbar." },
-            { name: "Elevación de Piernas Colgado", muscle: "Abdomen", equip: "Peso Corporal", description: "Colgado de la barra. Subí las rodillas (o piernas rectas) hacia el pecho, buscando enrollar la pelvis hacia arriba para contraer el abdomen inferior." },
-            { name: "Rueda Abdominal (Ab Wheel)", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro (sin dejar que caiga la cadera). Volvé usando la fuerza de flexión del core." },
-            { name: "Twist Ruso (Russian Twist)", muscle: "Abdomen", equip: "Disco", description: "Sentado, pies levemente elevados. Rotá el torso de un lado al otro tocando el suelo con el peso. Trabajo directo de oblicuos." },
-            { name: "Abdominales en V (V-Ups)", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba, brazos extendidos. Elevá piernas y torso simultáneamente para tocarte las puntas de los pies, formando una 'V'." },
-            { name: "Plancha Lateral", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo sobre un antebrazo y el lateral del pie. Cuerpo recto. Trabajo isométrico brutal para los músculos oblicuos y estabilizadores." },
-            { name: "Crunch en Polea (Abdominales de rodillas)", muscle: "Abdomen", equip: "Polea", description: "De rodillas dándole la espalda a la polea. Sujetá la cuerda tras la nuca. Flexioná la columna llevando los codos hacia las rodillas." }
+            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. No arquees la zona lumbar." },
+            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos en la plataforma. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción." },
+            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Mantené los pies firmes en el suelo." },
+            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas", description: "Banco a 30-45°. Retracción escapular. Bajá las mancuernas hasta la altura del pecho superior y empujá en un ligero arco hacia el centro." },
+            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No conviertas el movimiento en un press." },
+            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo, cruzando levemente las manos al final para máxima contracción del pectoral." },
+            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." },
+            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, apuntando los codos hacia abajo y atrás." },
+            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción. Mantené la zona lumbar neutra." },
+            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea", description: "Sentado, rodillas levemente flexionadas. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás." },
+            { name: "Press Militar", muscle: "Hombros", equip: "Barra", description: "De pie o sentado. Empujá la barra verticalmente sin usar impulso de las piernas. Contraé abdomen para proteger la lumbar." },
+            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Movimiento estricto." },
+            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados enfocando el esfuerzo en la parte posterior del hombro y trapecio." },
+            { name: "Curl de Bíceps", muscle: "Bíceps", equip: "Mancuernas", description: "Mantené los codos fijos a los costados del cuerpo. Subí contrayendo el bíceps y bajá de forma controlada (fase excéntrica)." },
+            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose). Subí manteniendo el codo fijo, ideal para trabajar el braquial y antebrazo junto al bíceps." },
+            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra", description: "Agarre cómodo en la curvatura de la barra. Evitá balanceos con el torso. Máxima tensión en el ascenso y retención en el descenso." },
+            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo contrayendo el tríceps. Subí hasta que el antebrazo pase los 90 grados." },
+            { name: "Press Francés", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo los codos. Extensión completa arriba." },
+            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido para enfocar en tríceps (o inclinado para pecho). Bajá hasta los 90 grados de codo y empujá verticalmente." },
+            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo contrayendo el abdomen. Movimiento corto enfocado en el core, sin tirar del cuello." },
+            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." },
+            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran enfoque en cuádriceps." },
+            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "De pie, un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." },
+            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." },
+            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás, reteniendo en la subida." },
+            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea", description: "Tobillera puesta. Torso firme. Extensión de cadera hacia atrás contrayendo el glúteo en el punto máximo. No uses la zona lumbar." },
+            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." },
+            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina", description: "Pecho apoyado (o de pie inclinado). Traccioná llevando los codos hacia atrás y arriba, maximizando el grosor de la espalda." },
+            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Gran recorrido articular." },
+            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda. Traccioná hacia tu cara separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para postura y hombro posterior." },
+            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps eliminando cualquier balanceo. No extiendas el codo al 100% abajo por seguridad." },
+            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro y la cadera retrovertida. Volvé usando la fuerza del core." }
         ];
 
         let audioCtx = null;
@@ -920,6 +856,9 @@
             const [activeClient, setActiveClient] = useState(null);
             const [activeDayId, setActiveDayId] = useState(null);
             
+            // NUEVO ESTADO: Controla si el profe está viendo Musculación o Funcional
+            const [profeCategory, setProfeCategory] = useState('musculacion');
+            
             const [activeWeek, setActiveWeek] = useState(1); 
             const [isTrainingStarted, setIsTrainingStarted] = useState(false);
             const [trainingTime, setTrainingTime] = useState(0);
@@ -1136,7 +1075,7 @@
                         try {
                             const parsed = JSON.parse(savedSession);
                             if (parsed.type === 'profesor' && parsed.pin === (dbData.profesorPin || '0000')) {
-                                setView('profesor');
+                                setView('profe_seleccionar_categoria'); // Redirige a elegir categoría
                             } else if (parsed.type === 'cliente') {
                                 const client = dbData.clients?.find(c => c.id === parsed.id);
                                 if (client) {
@@ -1161,7 +1100,7 @@
                 
                 if (pinInput === (globalData.profesorPin || '0000')) { 
                     localStorage.setItem(`bravo_session_${CLIENTE_ID}`, JSON.stringify({type: 'profesor', pin: pinInput}));
-                    setView('profesor'); 
+                    setView('profe_seleccionar_categoria'); // Redirige a elegir categoría
                 } 
                 else {
                     const client = globalData.clients?.find(c => c.pin === pinInput);
@@ -1183,7 +1122,13 @@
                 }
 
                 const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-                const newClient = { id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), name: newClientName, pin: newPin };
+                // Al crear, se le asigna la categoría activa (Musculación o Funcional)
+                const newClient = { 
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), 
+                    name: newClientName, 
+                    pin: newPin,
+                    category: profeCategory || 'musculacion' 
+                };
                 
                 mutateAndSave((freshData) => {
                     if(!freshData.clients) freshData.clients = [];
@@ -1467,6 +1412,9 @@
                 '--brand-glow': currentTheme.glow,
                 '--brand-glow-strong': currentTheme.glowStrong,
             };
+            
+            // Fila de clientes activa para la vista del profesor según categoría seleccionada
+            const currentClients = globalData?.clients?.filter(c => (c.category || 'musculacion') === profeCategory) || [];
 
             if (!isLicenseValid) {
                 return (
@@ -1499,12 +1447,12 @@
                             <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><i className="fa-solid fa-share-nodes text-brand-500"></i> Transferir plantilla a...</h3>
                                 <div className="space-y-2 max-h-60 overflow-y-auto hide-scrollbar">
-                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId).map(c => (
+                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId && (c.category || 'musculacion') === profeCategory).map(c => (
                                         <button key={c.id} onClick={() => { transferDayToClient(transferTarget.sourceClientId, c.id, transferTarget.dayId); setTransferTarget(null); }} className="w-full text-left bg-dark-800 p-4 rounded-xl border border-white/5 hover:border-brand-500 text-white font-medium transition-colors flex items-center justify-between group">
                                             {c.name} <i className="fa-solid fa-arrow-right text-gray-500 group-hover:text-brand-500"></i>
                                         </button>
                                     ))}
-                                    {globalData.clients.length <= 1 && <p className="text-gray-500 text-sm text-center py-4">No hay otros alumnos creados en tu panel.</p>}
+                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId && (c.category || 'musculacion') === profeCategory).length === 0 && <p className="text-gray-500 text-sm text-center py-4">No hay otros alumnos creados en esta área.</p>}
                                 </div>
                                 <button onClick={() => setTransferTarget(null)} className="w-full mt-4 bg-dark-800 text-gray-400 font-bold py-3.5 rounded-xl border border-dark-600 hover:text-white transition-colors">Cancelar</button>
                             </div>
@@ -1548,6 +1496,44 @@
                                 />
                                 <button onClick={handleLogin} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-4 rounded-2xl font-black text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/40 uppercase tracking-widest">
                                     Ingresar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* NUEVA VISTA: SELECCIÓN DE CATEGORÍA PARA EL PROFE */}
+                    {view === 'profe_seleccionar_categoria' && (
+                        <div className="app-container p-6 flex flex-col justify-center h-screen relative z-10 bg-dark-900 animate-fade-in">
+                            <header className="absolute top-0 left-0 w-full p-5 flex justify-between items-center glass-header">
+                                <h2 className="font-black text-xl text-white uppercase tracking-wider">Área de Gestión</h2>
+                                <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
+                            </header>
+
+                            <div className="space-y-6 mt-12 w-full animate-slide-up">
+                                <button
+                                    onClick={() => { setProfeCategory('musculacion'); setView('profesor'); }}
+                                    className="w-full glass-panel p-8 rounded-[2rem] flex flex-col items-center justify-center gap-4 hover:border-brand-500 transition-all shadow-xl group border border-white/5 bg-dark-800/50"
+                                >
+                                    <div className="w-20 h-20 bg-dark-900 rounded-full flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform shadow-inner border border-white/5">
+                                        <i className="fa-solid fa-dumbbell text-4xl"></i>
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-2xl font-black text-white uppercase tracking-wider">Musculación</h3>
+                                        <p className="text-xs text-gray-400 mt-2">Gestión general, fuerza e hipertrofia</p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => { setProfeCategory('funcional'); setView('profesor'); }}
+                                    className="w-full glass-panel p-8 rounded-[2rem] flex flex-col items-center justify-center gap-4 hover:border-brand-500 transition-all shadow-xl group border border-white/5 bg-dark-800/50"
+                                >
+                                    <div className="w-20 h-20 bg-dark-900 rounded-full flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform shadow-inner border border-white/5">
+                                        <i className="fa-solid fa-person-running text-4xl"></i>
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-2xl font-black text-white uppercase tracking-wider">Funcional</h3>
+                                        <p className="text-xs text-gray-400 mt-2">Circuitos, agilidad y peso corporal</p>
+                                    </div>
                                 </button>
                             </div>
                         </div>
@@ -1670,7 +1656,15 @@
                             ) : (
                                 <>
                                     <header className="p-5 flex justify-between items-center glass-header sticky top-0 z-10">
-                                        <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => { setView('profe_seleccionar_categoria'); setActiveClient(null); }} className="text-gray-400 hover:text-white transition-colors bg-dark-800 w-10 h-10 rounded-xl border border-white/5 flex items-center justify-center">
+                                                <i className="fa-solid fa-arrow-left"></i>
+                                            </button>
+                                            <div className="flex flex-col">
+                                                <h2 className="font-black text-lg text-white uppercase tracking-wider leading-tight">Panel Profe</h2>
+                                                <span className="text-[10px] text-brand-500 font-bold uppercase tracking-widest">{profeCategory === 'funcional' ? 'Funcional' : 'Musculación'}</span>
+                                            </div>
+                                        </div>
                                         <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
                                     </header>
                                     
@@ -1678,11 +1672,15 @@
                                         
                                         <div className="grid grid-cols-2 gap-4 mb-6">
                                             <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
-                                                <span className="text-3xl font-black text-brand-500">{globalData.clients?.length || 0}</span>
+                                                <span className="text-3xl font-black text-brand-500">{currentClients.length}</span>
                                                 <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Alumnos Activos</span>
                                             </div>
                                             <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
-                                                <span className="text-3xl font-black text-white">{Object.values(globalData.routines || {}).reduce((acc, curr) => acc + curr.length, 0)}</span>
+                                                <span className="text-3xl font-black text-white">
+                                                    {Object.entries(globalData.routines || {})
+                                                        .filter(([clientId, _]) => currentClients.map(c => c.id).includes(clientId))
+                                                        .reduce((acc, [_, routines]) => acc + routines.length, 0)}
+                                                </span>
                                                 <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Plantillas Activas</span>
                                             </div>
                                         </div>
@@ -1779,13 +1777,13 @@
                                             </div>
                                         </div>
 
-                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos</h3>
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos ({profeCategory === 'funcional' ? 'Funcional' : 'Musculación'})</h3>
                                         
-                                        {globalData.clients?.length === 0 && (
-                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                        {currentClients.length === 0 && (
+                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados en esta área.</div>
                                         )}
 
-                                        {globalData.clients?.map(client => (
+                                        {currentClients.map(client => (
                                             <div key={client.id} className="glass-panel p-4 rounded-2xl flex justify-between items-center hover:border-brand-500/50 transition-all shadow-md border border-white/5 group mb-3">
                                                 <div className="flex-1 cursor-pointer" onClick={() => setActiveClient(client)}>
                                                     <p className="font-bold text-base text-white">{client.name}</p>
