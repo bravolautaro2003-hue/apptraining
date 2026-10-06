@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v10';
+                const CACHE_NAME = 'panel-pro-offline-v9';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -95,8 +95,8 @@
             overflow-x: hidden !important;
             width: 100%;
             position: relative;
-            overscroll-behavior-x: none;
-            touch-action: pan-y;
+            overscroll-behavior-x: none; /* Evita que en iOS/Android rebote al deslizar horizontal */
+            touch-action: pan-y; /* Permite scroll vertical pero bloquea gestos horizontales nativos */
             -webkit-tap-highlight-color: transparent; 
             background-color: #050507; 
             color: #f3f3f6; 
@@ -113,7 +113,7 @@
             border-right: 1px solid #1e1e24; 
             box-shadow: 0 0 50px rgba(0,0,0,0.9); 
             position: relative; 
-            overflow-x: hidden !important;
+            overflow-x: hidden !important; /* Bloqueo estricto */
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -237,67 +237,6 @@
                 oscillator.stop(audioCtx.currentTime + 0.6); 
             } catch(e) { console.log("Audio falló", e); }
         };
-
-        // --- COMPONENTE DE PROGRESO DEL PROFESOR ---
-        function ProfesorProgressModal({ clientId, globalData, onClose }) {
-            const client = globalData.clients.find(c => c.id === clientId);
-            const routines = globalData.routines[clientId] || [];
-            const progress = globalData.progress[clientId] || {};
-
-            const exNames = {};
-            routines.forEach(day => {
-                (day.sections || []).forEach(sec => {
-                    (sec.exercises || []).forEach(ex => {
-                        exNames[ex.id] = ex.name;
-                    });
-                });
-            });
-
-            return (
-                <div className="absolute inset-0 z-[150] bg-dark-900 flex flex-col animate-slide-up h-full w-full">
-                    <header className="px-4 py-4 flex items-center justify-between glass-header border-b border-white/5">
-                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center text-white bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-lg"></i></button>
-                        <h2 className="text-white font-bold text-base flex flex-col items-center">
-                            <span>Progreso del Alumno</span>
-                            <span className="text-[10px] text-brand-500 tracking-widest uppercase">{client?.name}</span>
-                        </h2>
-                        <div className="w-10"></div>
-                    </header>
-                    <div className="flex-1 overflow-y-auto p-4 hide-scrollbar space-y-6">
-                        {[1, 2, 3, 4].map(w => {
-                            const wData = progress[w] || {};
-                            const hasData = Object.keys(wData).length > 0;
-                            if (!hasData) return null;
-
-                            return (
-                                <div key={w} className="bg-dark-800/80 p-4 rounded-3xl border border-white/5 shadow-lg">
-                                    <h3 className="font-black text-brand-500 uppercase tracking-widest text-xs mb-3 border-b border-dark-700 pb-2">Semana {w}</h3>
-                                    {Object.entries(wData).map(([exId, data]) => (
-                                        <div key={exId} className="mb-4 last:mb-0">
-                                            <p className="text-white font-bold text-sm mb-1">{exNames[exId] || 'Ejercicio eliminado'}</p>
-                                            {data.note && <p className="text-xs text-gray-400 mb-2 italic border-l-2 border-brand-500 pl-2">"{data.note}"</p>}
-                                            <div className="flex flex-wrap gap-2">
-                                                {(data.sets || []).map((s, idx) => {
-                                                    if(s.weight && s.reps) return (
-                                                        <span key={idx} className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${s.done ? 'bg-brand-500/10 text-brand-500 border-brand-500/30' : 'bg-dark-700 text-gray-500 border-dark-600'}`}>
-                                                            {s.weight}kg x {s.reps} {s.rir !== undefined && s.rir !== '' ? `(RIR ${s.rir})` : ''}
-                                                        </span>
-                                                    );
-                                                    return null;
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })}
-                        {Object.keys(progress).length === 0 && (
-                            <p className="text-center text-gray-500 text-sm mt-10">El alumno aún no registró progreso o marcas.</p>
-                        )}
-                    </div>
-                </div>
-            );
-        }
 
         function ExerciseCatalogModal({ onClose, onSelect }) {
             const [searchTerm, setSearchTerm] = useState('');
@@ -478,12 +417,12 @@
             );
         }
 
-        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, globalEditWeek }) {
+        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, onSaveToLibrary }) {
             const [localEx, setLocalEx] = useState(exercise);
+            const [editWeek, setEditWeek] = useState(1); 
             const [showInfoModal, setShowInfoModal] = useState(false);
             
             const localExRef = useRef(exercise);
-            const editWeek = globalEditWeek;
 
             useEffect(() => {
                 setLocalEx(exercise);
@@ -502,6 +441,7 @@
             const handleWeekConfigChange = (weekNum, field, value) => {
                 const updatedWeeks = JSON.parse(JSON.stringify(localEx.weeks || {}));
                 if (!updatedWeeks[weekNum]) {
+                    // Inicializa con los valores genéricos, pero ahora RIR también viaja acá
                     updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10', rir: localEx.rir ?? '2' };
                 }
                 updatedWeeks[weekNum][field] = value;
@@ -554,6 +494,15 @@
                     </div>
 
                     <div className="mb-3 pt-1">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black text-brand-500 uppercase tracking-widest">Programación Semanal:</span>
+                            <div className="flex bg-dark-900 rounded-lg p-0.5 border border-dark-600">
+                                {[1, 2, 3, 4].map(w => (
+                                    <button key={w} type="button" onClick={() => setEditWeek(w)} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${editWeek === w ? 'bg-brand-500 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>S{w}</button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="flex gap-3 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
                             <div className="flex items-center gap-2 flex-1">
                                 <span className="text-xs text-gray-400">Sets:</span>
@@ -909,9 +858,6 @@
             const [activeDayId, setActiveDayId] = useState(null);
             
             const [activeWeek, setActiveWeek] = useState(1); 
-            const [profActiveWeek, setProfActiveWeek] = useState(1); 
-            const [viewingProgressFor, setViewingProgressFor] = useState(null);
-            
             const [isTrainingStarted, setIsTrainingStarted] = useState(false);
             const [trainingTime, setTrainingTime] = useState(0);
             
@@ -922,6 +868,10 @@
             const [transferTarget, setTransferTarget] = useState(null);
 
             const [toast, setToast] = useState(null);
+            
+            // Nuevos estados para los features
+            const [showLibraryModal, setShowLibraryModal] = useState(false);
+            const [showClientProgressModal, setShowClientProgressModal] = useState(false);
 
             const saveTimeoutRef = useRef(null);
             const pendingDataRef = useRef(null);
@@ -983,6 +933,54 @@
                 showToast('Métrica actualizada correctamente', 'info');
             };
 
+            // ---- NUEVAS FUNCIONES: LIBRERÍA DE PLANTILLAS ----
+            const saveToLibrary = (clientId, dayId) => {
+                mutateAndSave((freshData) => {
+                    const dayToSave = freshData.routines[clientId]?.find(d => d.id === dayId);
+                    if (!dayToSave) return;
+                    if (!freshData.library) freshData.library = [];
+                    const clonedDay = JSON.parse(JSON.stringify(dayToSave));
+                    clonedDay.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    freshData.library.push(clonedDay);
+                });
+                showToast('Plantilla guardada en la Librería Global');
+            };
+
+            const importFromLibrary = (clientId, libraryTemplateId) => {
+                mutateAndSave((freshData) => {
+                    const template = freshData.library?.find(t => t.id === libraryTemplateId);
+                    if (!template) return;
+                    if (!freshData.routines[clientId]) freshData.routines[clientId] = [];
+                    const clonedDay = JSON.parse(JSON.stringify(template));
+                    clonedDay.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    if(clonedDay.sections) {
+                        clonedDay.sections.forEach(sec => {
+                            sec.id = Math.random().toString(36).substr(2, 9);
+                            if(sec.exercises) {
+                                sec.exercises.forEach(ex => {
+                                    ex.id = Math.random().toString(36).substr(2, 9);
+                                });
+                            }
+                        });
+                    }
+                    freshData.routines[clientId].push(clonedDay);
+                });
+                showToast('Plantilla importada con éxito');
+                setShowLibraryModal(false);
+            };
+
+            const deleteFromLibrary = (libraryTemplateId) => {
+                if(window.confirm('¿Seguro que querés eliminar esta plantilla de la librería?')) {
+                    mutateAndSave((freshData) => {
+                        if (freshData.library) {
+                            freshData.library = freshData.library.filter(t => t.id !== libraryTemplateId);
+                        }
+                    });
+                    showToast('Plantilla eliminada de la librería');
+                }
+            };
+            // ------------------------------------------------
+
             useEffect(() => {
                 if (FECHA_VENCIMIENTO) {
                     const expiryDate = new Date(FECHA_VENCIMIENTO + 'T23:59:59');
@@ -1009,12 +1007,12 @@
                 return () => { supabase.removeChannel(channel); };
             }, [isLicenseValid]);
 
+            // ---- CRONOMETRO AHORA CORRE EN CUALQUIER PANTALLA ----
             useEffect(() => {
                 let interval = null;
-                // El contador sigue mientras isTrainingStarted sea true, independientemente de la vista
                 if (isTrainingStarted) {
                     interval = setInterval(() => setTrainingTime(t => t + 1), 1000);
-                }
+                } else { clearInterval(interval); }
                 return () => clearInterval(interval);
             }, [isTrainingStarted]);
 
@@ -1039,8 +1037,13 @@
             useEffect(() => {
                 const handlePopState = (e) => {
                     if (view === 'cliente_entrenamiento' && isTrainingStarted) {
-                        // Cambiamos la vista pero no reiniciamos el estado de entrenamiento
-                        setView('cliente_listado');
+                        if (!window.confirm("¿Seguro que querés salir del entrenamiento en curso? Perderás el cronómetro.")) {
+                            // Si cancela, volvemos a empujar el estado para mantener la trampa
+                            window.history.pushState(null, '', window.location.href);
+                        } else {
+                            setIsTrainingStarted(false);
+                            setView('cliente_listado');
+                        }
                     }
                 };
                 window.addEventListener('popstate', handlePopState);
@@ -1056,13 +1059,13 @@
                         }
                     } catch (err) {}
                 };
-                if (view === 'cliente_entrenamiento' && isTrainingStarted) {
+                if (isTrainingStarted) { 
                     requestWakeLock();
                 }
                 return () => { 
                     if (wakeLock) wakeLock.release().catch(()=>{}); 
                 };
-            }, [view, isTrainingStarted]);
+            }, [isTrainingStarted]);
 
             const startRest = (timeString) => {
                 let t = 90;
@@ -1092,10 +1095,12 @@
                 return `${m}:${s}`;
             };
 
-            const getTonnageForWeek = (weekNum) => {
-                if (!globalData || !currentUser || !globalData.progress) return 0;
+            // AHORA ACEPTA EL ID DEL CLIENTE PARA VER PROGRESO
+            const getTonnageForWeek = (weekNum, overrideClientId = null) => {
+                const targetId = overrideClientId || currentUser?.id;
+                if (!globalData || !targetId || !globalData.progress) return 0;
                 let total = 0;
-                const weekData = globalData.progress[currentUser.id]?.[weekNum];
+                const weekData = globalData.progress[targetId]?.[weekNum];
                 if (!weekData) return 0;
                 
                 Object.values(weekData).forEach(ex => {
@@ -1115,11 +1120,7 @@
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
-                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {} };
-                    
-                    if (!dbData.routines) dbData.routines = {};
-                    if (!dbData.routines['GLOBAL_TEMPLATES']) dbData.routines['GLOBAL_TEMPLATES'] = [];
-
+                    let dbData = data?.data || { profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {}, library: [] };
                     setGlobalData(dbData);
                     
                     const savedSession = localStorage.getItem(`bravo_session_${CLIENTE_ID}`);
@@ -1141,7 +1142,7 @@
                     }
                 } catch (e) { 
                     console.error(e);
-                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: { 'GLOBAL_TEMPLATES': [] }, progress: {} });
+                    setGlobalData({ profesorPin: '0000', appTitle1: 'Entrenamiento', appTitle2: 'Y Salud', profesorName: '', clients: [], routines: {}, progress: {}, library: [] });
                 }
                 setLoading(false);
             };
@@ -1450,6 +1451,7 @@
                 });
             };
 
+            // Cálculo dinámico del tema
             const currentTheme = THEMES[globalData?.themeColor] || THEMES.green;
             const appStyleVars = {
                 '--brand-500': currentTheme[500],
@@ -1484,29 +1486,72 @@
                         />
                     )}
 
+                    {/* MODAL PARA PROGRESO DEL ALUMNO (VISTA PROFESOR) */}
+                    {showClientProgressModal && activeClient && (
+                        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowClientProgressModal(false)}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setShowClientProgressModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                <h3 className="text-white font-bold text-lg mb-2"><i className="fa-solid fa-chart-line text-brand-500"></i> Progreso de {activeClient.name}</h3>
+                                <p className="text-xs text-gray-400 mb-6">Volumen de carga (Tonelaje) por semana</p>
+                                <div className="space-y-4">
+                                    {[1, 2, 3, 4].map(w => {
+                                        const tonnage = getTonnageForWeek(w, activeClient.id);
+                                        return (
+                                            <div key={w} className="bg-dark-800 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                                <span className="text-sm font-bold text-gray-300">Semana {w}</span>
+                                                <span className="text-base font-black text-brand-500">{tonnage.toLocaleString()} <span className="text-[10px] text-gray-500">kg</span></span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL DE LIBRERÍA DE PLANTILLAS */}
+                    {showLibraryModal && (
+                        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowLibraryModal(false)}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setShowLibraryModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                <h3 className="text-white font-bold text-lg mb-4"><i className="fa-solid fa-book-bookmark text-brand-500"></i> Librería de Plantillas</h3>
+                                
+                                <div className="overflow-y-auto hide-scrollbar space-y-3 flex-1">
+                                    {(!globalData.library || globalData.library.length === 0) ? (
+                                        <p className="text-gray-500 text-sm text-center py-6">La librería está vacía. Guardá una plantilla usando el icono del marcador.</p>
+                                    ) : (
+                                        globalData.library.map(template => (
+                                            <div key={template.id} className="bg-dark-800 p-4 rounded-xl border border-white/5 flex items-center justify-between group">
+                                                <div className="flex-1 overflow-hidden pr-2">
+                                                    <h4 className="font-bold text-white text-sm truncate">{template.name}</h4>
+                                                    <p className="text-[10px] text-gray-400 mt-1">{template.sections?.length || 0} bloques</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => importFromLibrary(activeClient.id, template.id)} className="bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-600 transition-colors">Importar</button>
+                                                    <button onClick={() => deleteFromLibrary(template.id)} className="text-gray-500 hover:text-red-400 p-1.5 transition-colors"><i className="fa-solid fa-trash-can"></i></button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {transferTarget && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setTransferTarget(null)}>
                             <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><i className="fa-solid fa-share-nodes text-brand-500"></i> Transferir plantilla a...</h3>
                                 <div className="space-y-2 max-h-60 overflow-y-auto hide-scrollbar">
-                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId && c.id !== 'GLOBAL_TEMPLATES').map(c => (
+                                    {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId).map(c => (
                                         <button key={c.id} onClick={() => { transferDayToClient(transferTarget.sourceClientId, c.id, transferTarget.dayId); setTransferTarget(null); }} className="w-full text-left bg-dark-800 p-4 rounded-xl border border-white/5 hover:border-brand-500 text-white font-medium transition-colors flex items-center justify-between group">
                                             {c.name} <i className="fa-solid fa-arrow-right text-gray-500 group-hover:text-brand-500"></i>
                                         </button>
                                     ))}
-                                    {globalData.clients.filter(c => c.id !== 'GLOBAL_TEMPLATES').length <= 1 && <p className="text-gray-500 text-sm text-center py-4">No hay otros alumnos creados en tu panel.</p>}
+                                    {globalData.clients.length <= 1 && <p className="text-gray-500 text-sm text-center py-4">No hay otros alumnos creados en tu panel.</p>}
                                 </div>
                                 <button onClick={() => setTransferTarget(null)} className="w-full mt-4 bg-dark-800 text-gray-400 font-bold py-3.5 rounded-xl border border-dark-600 hover:text-white transition-colors">Cancelar</button>
                             </div>
                         </div>
-                    )}
-
-                    {viewingProgressFor && (
-                        <ProfesorProgressModal
-                            clientId={viewingProgressFor}
-                            globalData={globalData}
-                            onClose={() => setViewingProgressFor(null)}
-                        />
                     )}
 
                     {toast && (
@@ -1526,4 +1571,331 @@
                             }}
                         >
                             <div className="text-center animate-fade-in my-auto relative z-20 mt-20">
-                                <div className="inline-flex justify-center items-center w-28 h-2
+                                <div className="inline-flex justify-center items-center w-28 h-28 bg-gradient-to-br from-dark-800 to-dark-950 rounded-[2rem] border-2 border-brand-500/40 text-brand-500 mb-8 shadow-[0_0_40px_var(--brand-glow)] relative overflow-hidden transform rotate-3">
+                                    <div className="absolute inset-0 bg-brand-500/10 backdrop-blur-md"></div>
+                                    <i className="fa-solid fa-dumbbell text-5xl relative z-10 drop-shadow-[0_0_15px_var(--brand-glow-strong)] -rotate-3"></i>
+                                </div>
+                                
+                                <h1 className="text-4xl font-black text-white uppercase tracking-tighter mb-0.5 drop-shadow-lg">{globalData?.appTitle1 || 'Entrenamiento'}</h1>
+                                <h2 className="text-xl font-bold text-brand-500 tracking-[0.2em] uppercase drop-shadow-md">{globalData?.appTitle2 || 'Y Salud'}</h2>
+                                <p className="text-[10px] text-gray-300 font-black tracking-widest mt-4 uppercase border-t border-white/20 pt-4 mx-auto w-3/4 opacity-90">Rendimiento & Biomecánica</p>
+                            </div>
+                            
+                            <div className="glass-panel p-6 rounded-[2rem] shadow-2xl mb-6 relative z-20">
+                                <input 
+                                    type="password" 
+                                    placeholder="INGRESA TU PIN" 
+                                    className="w-full bg-dark-950/50 p-4 rounded-2xl text-center text-xl tracking-[0.4em] outline-none mb-4 text-white border border-white/10 focus:border-brand-500 transition-colors font-bold placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400 shadow-inner backdrop-blur-sm" 
+                                    value={pinInput} 
+                                    onChange={(e) => setPinInput(e.target.value)} 
+                                />
+                                <button onClick={handleLogin} className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-4 rounded-2xl font-black text-sm hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/40 uppercase tracking-widest">
+                                    Ingresar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'profesor' && (
+                        <div className="app-container pb-20 relative z-10 bg-dark-900">
+                            {activeClient ? (
+                                activeDayId && globalData.routines[activeClient.id]?.find(d => d.id === activeDayId) ? (
+                                    <>
+                                        <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-50">
+                                            <button onClick={() => setActiveDayId(null)} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                            <h2 className="font-bold text-base text-white tracking-wide">Editar Plantilla</h2>
+                                            <div className="w-10"></div>
+                                        </header>
+                                        <div className="p-4">
+                                            <EditableTitle 
+                                                initialValue={globalData.routines[activeClient.id].find(d => d.id === activeDayId).name}
+                                                placeholder="Nombre del día..."
+                                                className="font-black text-2xl lowercase bg-transparent outline-none text-white w-full mb-6 border-b border-dark-700 pb-2 focus:border-brand-500 transition-colors placeholder-gray-600"
+                                                onSave={(val) => updateDayName(activeClient.id, activeDayId, val)}
+                                            />
+                                            
+                                            {(() => {
+                                                const day = globalData.routines[activeClient.id].find(d => d.id === activeDayId);
+                                                const sections = day.sections || [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
+
+                                                return (
+                                                    <div className="space-y-6">
+                                                        {sections.map((sec, secIdx) => (
+                                                            <div key={sec.id || secIdx} className="bg-dark-800/80 backdrop-blur-md p-4 rounded-3xl border border-white/5 shadow-xl">
+                                                                <div className="flex items-center justify-between mb-4 pb-2 border-b border-dark-700">
+                                                                    <EditableTitle 
+                                                                        initialValue={sec.name}
+                                                                        placeholder="NOMBRE DEL BLOQUE..."
+                                                                        className="bg-transparent font-black text-brand-500 text-sm uppercase tracking-wider outline-none w-3/4 placeholder-gray-500"
+                                                                        onSave={(val) => updateSectionName(activeClient.id, activeDayId, sec.id, val)}
+                                                                    />
+                                                                    {sections.length > 1 && (
+                                                                        <button onClick={() => deleteSection(activeClient.id, activeDayId, sec.id)} className="text-gray-500 hover:text-red-400 transition-colors text-xs px-2 py-1"><i className="fa-solid fa-trash-can"></i></button>
+                                                                    )}
+                                                                </div>
+
+                                                                {sec.exercises.map((ex, exIdx) => (
+                                                                    <ExerciseRow 
+                                                                        key={ex.id} 
+                                                                        exercise={ex}
+                                                                        isFirst={exIdx === 0}
+                                                                        isLast={exIdx === sec.exercises.length - 1}
+                                                                        clientProgress={globalData.progress?.[activeClient.id]}
+                                                                        onUpdate={(u) => updateExerciseInSection(activeClient.id, activeDayId, sec.id, u)} 
+                                                                        onDelete={() => deleteExerciseFromSection(activeClient.id, activeDayId, sec.id, ex.id)} 
+                                                                        onMoveUp={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, -1)}
+                                                                        onMoveDown={() => moveExercise(activeClient.id, activeDayId, sec.id, exIdx, 1)}
+                                                                    />
+                                                                ))}
+
+                                                                <button onClick={() => setCatalogTarget({clientId: activeClient.id, dayId: activeDayId, secId: sec.id})} className="w-full bg-dark-700 text-brand-500 font-bold py-3.5 rounded-2xl mt-2 text-xs uppercase tracking-wider border border-white/5 hover:bg-dark-600 transition-colors shadow-sm flex items-center justify-center gap-2">
+                                                                    <i className="fa-solid fa-magnifying-glass"></i> Añadir desde catálogo
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        <button onClick={() => addSection(activeClient.id, activeDayId)} className="w-full bg-dark-800 text-white font-bold py-4 rounded-2xl mt-4 border border-white/5 hover:bg-dark-700 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
+                                                            <i className="fa-solid fa-layer-group text-brand-500"></i> Nuevo bloque
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <header className="p-4 flex items-center justify-between sticky top-0 glass-header z-10">
+                                            <button onClick={() => setActiveClient(null)} className="text-brand-500 w-10 h-10 flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5"><i className="fa-solid fa-arrow-left text-base"></i></button>
+                                            <div className="flex flex-col items-center">
+                                                <h2 className="font-bold text-base text-white tracking-wide">{activeClient.name}</h2>
+                                                {(activeClient.age || activeClient.weight || activeClient.goal) && (
+                                                    <p className="text-[9px] text-brand-500 font-black mt-0.5 uppercase tracking-widest">
+                                                        {[
+                                                            activeClient.age ? `${activeClient.age}A` : null, 
+                                                            activeClient.weight ? `${activeClient.weight}KG` : null, 
+                                                            activeClient.goal
+                                                        ].filter(Boolean).join(' • ')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="w-10 h-10 flex items-center justify-center">
+                                                <button onClick={() => setShowClientProgressModal(true)} className="text-brand-500 w-full h-full flex items-center justify-center hover:text-white transition-colors bg-dark-800 rounded-xl border border-white/5" title="Ver Progreso"><i className="fa-solid fa-chart-line text-base"></i></button>
+                                            </div>
+                                        </header>
+                                        
+                                        <div className="p-4">
+                                            <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-4">Plantillas asignadas</h3>
+                                            <div className="space-y-4">
+                                                {(globalData.routines[activeClient.id] || []).map(day => {
+                                                    const totalEx = day.sections ? day.sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0) : (day.exercises?.length || 0);
+                                                    return (
+                                                        <div key={day.id} onClick={() => setActiveDayId(day.id)} className="glass-panel p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:border-brand-500/50 transition-all shadow-md group border border-white/5">
+                                                            <div className="w-14 h-14 bg-dark-800 rounded-xl shrink-0 flex items-center justify-center text-brand-500 border border-dark-600 group-hover:scale-105 transition-transform">
+                                                                <i className="fa-solid fa-dumbbell text-xl"></i>
+                                                            </div>
+                                                            <div className="flex-1 overflow-hidden">
+                                                                <h4 className="font-bold text-base text-white truncate lowercase">{day.name}</h4>
+                                                                <p className="text-xs text-gray-400 truncate mt-0.5">{totalEx} ejercicios programados</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <button onClick={(e) => { e.stopPropagation(); saveToLibrary(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Guardar en Librería"><i className="fa-solid fa-bookmark"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); setTransferTarget({ sourceClientId: activeClient.id, dayId: day.id }); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Transferir a otro alumno"><i className="fa-solid fa-share-nodes"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); cloneDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-brand-500 transition-colors" title="Duplicar"><i className="fa-solid fa-copy"></i></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); deleteDay(activeClient.id, day.id); }} className="text-gray-400 p-2.5 hover:text-red-400 transition-colors" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <button onClick={() => addDay(activeClient.id)} className="mt-6 flex items-center justify-center gap-2 text-white font-black w-full bg-brand-500 p-4 rounded-2xl hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/30 uppercase text-xs tracking-wider">
+                                                <i className="fa-regular fa-folder text-base"></i> Crear nueva plantilla
+                                            </button>
+                                            <button onClick={() => setShowLibraryModal(true)} className="mt-3 flex items-center justify-center gap-2 text-brand-500 font-black w-full bg-dark-800 p-4 rounded-2xl hover:bg-dark-700 transition-colors shadow-sm border border-brand-500/30 uppercase text-xs tracking-wider">
+                                                <i className="fa-solid fa-book-bookmark text-base"></i> Importar de Librería
+                                            </button>
+                                        </div>
+                                    </>
+                                )
+                            ) : (
+                                <>
+                                    <header className="p-5 flex justify-between items-center glass-header sticky top-0 z-10">
+                                        <h2 className="font-black text-xl text-white uppercase tracking-wider">Panel Profe</h2>
+                                        <button onClick={logout} className="text-xs font-bold text-gray-400 bg-dark-800 px-4 py-2 rounded-xl hover:text-white transition-colors border border-white/5">Salir</button>
+                                    </header>
+                                    
+                                    <div className="p-5 space-y-4">
+                                        
+                                        <div className="grid grid-cols-2 gap-4 mb-6">
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-brand-500">{globalData.clients?.length || 0}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Alumnos Activos</span>
+                                            </div>
+                                            <div className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center shadow-md">
+                                                <span className="text-3xl font-black text-white">{Object.values(globalData.routines || {}).reduce((acc, curr) => acc + curr.length, 0)}</span>
+                                                <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-bold">Plantillas Activas</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 bg-dark-800/80 p-2 rounded-2xl border border-white/5 shadow-inner mb-6">
+                                            <input className="flex-1 bg-transparent px-4 outline-none text-sm text-white placeholder-gray-500 font-medium" placeholder="Nuevo alumno..." value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                                            <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/30 font-bold"><i className="fa-solid fa-plus"></i></button>
+                                        </div>
+
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Marca Blanca)</h3>
+                                        <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4 shadow-md mb-6">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título App</label>
+                                                    <input 
+                                                        className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                        defaultValue={globalData.appTitle1 || 'Entrenamiento'}
+                                                        onBlur={(e) => updateAppSetting('appTitle1', e.target.value)}
+                                                        placeholder="Ej: Alpha"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Subtítulo</label>
+                                                    <input 
+                                                        className="w-full bg-dark-900/50 p-2.5 rounded-xl text-brand-500 font-bold outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                        defaultValue={globalData.appTitle2 || 'Y Salud'}
+                                                        onBlur={(e) => updateAppSetting('appTitle2', e.target.value)}
+                                                        placeholder="Ej: Fitness"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nombre del Entrenador</label>
+                                                <input 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600"
+                                                    defaultValue={globalData.profesorName || ''}
+                                                    onBlur={(e) => updateAppSetting('profesorName', e.target.value)}
+                                                    placeholder="Ej: Lautaro Bravo"
+                                                />
+                                                <p className="text-[9px] text-gray-500 mt-1">Este nombre aparecerá en la sección de perfil de tus alumnos.</p>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color de la Marca</label>
+                                                <div className="flex gap-2.5 mt-2 flex-wrap">
+                                                    {Object.keys(THEMES).map(themeName => {
+                                                        const isActive = globalData?.themeColor === themeName || (!globalData?.themeColor && themeName === 'green');
+                                                        return (
+                                                            <button 
+                                                                key={themeName} 
+                                                                onClick={() => updateAppSetting('themeColor', themeName)}
+                                                                className={`w-8 h-8 rounded-full border-2 transition-transform cursor-pointer ${isActive ? 'scale-110 border-white shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                                                style={{ backgroundColor: `rgb(${THEMES[themeName][500].split(' ').join(',')})` }}
+                                                                title={`Tema ${themeName}`}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aviso Global para Alumnos</label>
+                                                <textarea 
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600 resize-none"
+                                                    rows="2"
+                                                    defaultValue={globalData.globalAnnouncement || ''}
+                                                    onBlur={(e) => updateAppSetting('globalAnnouncement', e.target.value)}
+                                                    placeholder="Ej: Este feriado el gimnasio abre de 10 a 14hs..."
+                                                />
+                                                <p className="text-[9px] text-gray-500 mt-1">Se mostrará destacado al inicio de la app de cada alumno.</p>
+                                            </div>
+
+                                            <div className="border-t border-dark-700 pt-3">
+                                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PIN del Profesor</label>
+                                                <div className="flex gap-2 mt-1">
+                                                    <input 
+                                                        type="password" 
+                                                        className="flex-1 bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm tracking-widest"
+                                                        placeholder="Nuevo PIN..."
+                                                        id="newAdminPin"
+                                                    />
+                                                    <button onClick={() => {
+                                                        const newPin = document.getElementById('newAdminPin').value;
+                                                        if(newPin.length >= 4) {
+                                                            updateAppSetting('profesorPin', newPin);
+                                                            showToast('PIN de profesor actualizado correctamente');
+                                                            document.getElementById('newAdminPin').value = '';
+                                                        } else {
+                                                            showToast('El PIN debe tener al menos 4 caracteres', 'error');
+                                                        }
+                                                    }} className="bg-brand-500 text-white px-4 rounded-xl font-bold text-xs hover:bg-brand-600 shadow-md">Cambiar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos</h3>
+                                        
+                                        {globalData.clients?.length === 0 && (
+                                            <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
+                                        )}
+
+                                        {globalData.clients?.map(client => (
+                                            <div key={client.id} className="glass-panel p-4 rounded-2xl flex justify-between items-center hover:border-brand-500/50 transition-all shadow-md border border-white/5 group mb-3">
+                                                <div className="flex-1 cursor-pointer" onClick={() => setActiveClient(client)}>
+                                                    <p className="font-bold text-base text-white">{client.name}</p>
+                                                    <p className="text-xs text-brand-500 mt-1 font-semibold"><i className="fa-solid fa-key mr-1"></i> PIN: {client.pin} • <span className="text-gray-400">{(globalData.routines[client.id] || []).length} rutinas asignadas</span></p>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); editClientName(client.id, client.name); }} className="text-gray-400 hover:text-brand-500 p-2 transition-colors" title="Editar Nombre"><i className="fa-solid fa-pen"></i></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteClient(client.id); }} className="text-gray-400 hover:text-red-500 p-2 transition-colors" title="Eliminar Alumno"><i className="fa-solid fa-trash-can"></i></button>
+                                                    <i className="fa-solid fa-chevron-right text-gray-500 text-sm ml-2 cursor-pointer hover:text-brand-500" onClick={() => setActiveClient(client)}></i>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {view === 'cliente_listado' && (
+                        <div className="app-container pb-24 relative z-10 bg-dark-900">
+                            <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-10">
+                                <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-[10px] shadow-[0_0_15px_var(--brand-glow)] border border-white/20 transform rotate-3">
+                                        <i className="fa-solid fa-dumbbell -rotate-3"></i>
+                                    </div>
+                                    <div className="flex flex-col leading-none">
+                                        <span className="uppercase tracking-wider text-[11px]">{globalData?.appTitle1 || 'Entrenamiento'}</span>
+                                        <span className="text-brand-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">{globalData?.appTitle2 || 'Y Salud'}</span>
+                                    </div>
+                                </h1>
+                            </header>
+
+                            <div className="p-5">
+                                {globalData?.globalAnnouncement && globalData.globalAnnouncement.trim() !== '' && (
+                                    <div className="mb-6 bg-brand-500/10 border border-brand-500/30 p-4 rounded-2xl flex gap-4 items-start shadow-inner">
+                                        <div className="w-10 h-10 shrink-0 bg-brand-500/20 rounded-full flex items-center justify-center text-brand-500">
+                                            <i className="fa-solid fa-bullhorn text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-brand-500 text-sm mb-1 uppercase tracking-wider">Aviso del Entrenador</h3>
+                                            <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-wrap">{globalData.globalAnnouncement}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="mb-6 bg-dark-800/60 p-4 rounded-2xl border border-white/5">
+                                    <h2 className="text-xl font-black text-white">Hola, {currentUser?.name || 'Atleta'}</h2>
+                                    <p className="text-xs text-gray-400 mt-0.5">Seleccioná tu semana y a darlo todo.</p>
+                                </div>
+
+                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-3">Seleccionar semana</h3>
+                                <div className="flex bg-dark-800/90 rounded-2xl p-1.5 mb-8 border border-white/5 shadow-inner">
+                                    {[1, 2, 3, 4].map(num => (
+                                        <button key={num} onClick={() => setActiveWeek(num)} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${activeWeek === num ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30' : 'text-gray-400 hover:text-white'}`}>Sem. {num}</button>
+                                    ))}
+                                </div>
+
+                                <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-4">Tus plantillas</h3>
+                                <div className="space-y-4">
+                                    {(globalData.routines[currentUser.id] || []).map(day => {
+                                        const totalEx = day.sections ? day.sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0) : (day.exercises?.length || 0);
+                                        return (
+                                            <div key={day.id} onClick={() => {setActiveDayId(day.id); setIsTrainingStarted(false); setView('cliente_entrenamiento');}} className="glass-panel p-4 rounded-
