@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v9';
+                const CACHE_NAME = 'panel-pro-offline-v10';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -158,7 +158,7 @@
         const { useState, useEffect, useRef } = React;
         
         // ==========================================
-        // CONSTANTES DE LICENCIA DEL CLIENTE (B2B)
+        // CONSTANTES Y HERRAMIENTAS GLOBALES
         // ==========================================
         const CLIENTE_ID = 'Lautaro_Bravo'; 
         const MAX_CLIENTES = null; // Ilimitado
@@ -168,313 +168,72 @@
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // MEJORA 4: Generador de IDs Seguro (UUID)
+        const generateId = () => {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        };
+
+        // MEJORA 5: Clonación Profunda Optimizada
+        const deepClone = (obj) => {
+            if (typeof structuredClone === 'function') return structuredClone(obj);
+            return JSON.parse(JSON.stringify(obj));
+        };
+
         const THEMES = {
-            green: { 
-                500: '0 230 118', 
-                600: '0 184 92', 
-                glow: 'rgba(0, 230, 118, 0.4)', 
-                glowStrong: 'rgba(0, 230, 118, 0.7)' 
-            },
-            blue: { 
-                500: '59 130 246', 
-                600: '37 99 235', 
-                glow: 'rgba(59, 130, 246, 0.4)', 
-                glowStrong: 'rgba(59, 130, 246, 0.7)' 
-            },
-            red: { 
-                500: '239 68 68', 
-                600: '220 38 38', 
-                glow: 'rgba(239, 68, 68, 0.4)', 
-                glowStrong: 'rgba(239, 68, 68, 0.7)' 
-            },
-            purple: { 
-                500: '168 85 247', 
-                600: '147 51 234', 
-                glow: 'rgba(168, 85, 247, 0.4)', 
-                glowStrong: 'rgba(168, 85, 247, 0.7)' 
-            },
-            orange: { 
-                500: '249 115 22', 
-                600: '234 88 12', 
-                glow: 'rgba(249, 115, 22, 0.4)', 
-                glowStrong: 'rgba(249, 115, 22, 0.7)' 
-            },
-            gold: { 
-                500: '234 179 8', 
-                600: '202 138 4', 
-                glow: 'rgba(234, 179, 8, 0.4)', 
-                glowStrong: 'rgba(234, 179, 8, 0.7)' 
-            },
-            pink: { 
-                500: '236 72 153', 
-                600: '219 39 119', 
-                glow: 'rgba(236, 72, 153, 0.4)', 
-                glowStrong: 'rgba(236, 72, 153, 0.7)' 
-            }
+            green: { 500: '0 230 118', 600: '0 184 92', glow: 'rgba(0, 230, 118, 0.4)', glowStrong: 'rgba(0, 230, 118, 0.7)' },
+            blue: { 500: '59 130 246', 600: '37 99 235', glow: 'rgba(59, 130, 246, 0.4)', glowStrong: 'rgba(59, 130, 246, 0.7)' },
+            red: { 500: '239 68 68', 600: '220 38 38', glow: 'rgba(239, 68, 68, 0.4)', glowStrong: 'rgba(239, 68, 68, 0.7)' },
+            purple: { 500: '168 85 247', 600: '147 51 234', glow: 'rgba(168, 85, 247, 0.4)', glowStrong: 'rgba(168, 85, 247, 0.7)' },
+            orange: { 500: '249 115 22', 600: '234 88 12', glow: 'rgba(249, 115, 22, 0.4)', glowStrong: 'rgba(249, 115, 22, 0.7)' },
+            gold: { 500: '234 179 8', 600: '202 138 4', glow: 'rgba(234, 179, 8, 0.4)', glowStrong: 'rgba(234, 179, 8, 0.7)' },
+            pink: { 500: '236 72 153', 600: '219 39 119', glow: 'rgba(236, 72, 153, 0.4)', glowStrong: 'rgba(236, 72, 153, 0.7)' }
         };
 
         const EXERCISE_CATALOG = [
-            { 
-                name: "Prensa 45° (Máquina)", 
-                muscle: "Cuádriceps", 
-                equip: "Máquina", 
-                image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", 
-                description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros. Empujá con el talón y media planta, evitando estirar y bloquear las rodillas por completo." 
-            },
-            { 
-                name: "Prensa Horizontal Tumbado", 
-                muscle: "Cuádriceps", 
-                equip: "Máquina", 
-                image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", 
-                description: "Misma biomecánica que la prensa 45° pero el vector de fuerza es horizontal. Evitá despegar la cadera del asiento al flexionar." 
-            },
-            { 
-                name: "Sentadilla (Máquina Smith)", 
-                muscle: "Glúteos", 
-                equip: "Máquina", 
-                image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", 
-                description: "Adelantá ligeramente los pies para mayor enfoque en glúteos. Bajá profundo controlando la fase excéntrica y subí empujando con los talones." 
-            },
-            { 
-                name: "Sentadilla A Una Pierna Asistida", 
-                muscle: "Cuádriceps", 
-                equip: "Peso Corporal", 
-                description: "Usá un soporte (TRX, poste) para equilibrarte. Bajá con una sola pierna manteniendo el talón firme. Gran trabajo de estabilización." 
-            },
-            { 
-                name: "Sentadilla Barra Alta", 
-                muscle: "Cuádriceps", 
-                equip: "Barra", 
-                description: "Barra apoyada sobre los trapecios. Pecho arriba, bajá rompiendo el paralelo si tu movilidad lo permite. Empuje vertical." 
-            },
-            { 
-                name: "Sentadilla Libre", 
-                muscle: "Cuádriceps", 
-                equip: "Barra", 
-                description: "Barra apoyada de forma estable en la espalda. Pies ancho de hombros o ligeramente más abiertos. Descenso profundo controlando la fase excéntrica y manteniendo el torso firme." 
-            },
-            { 
-                name: "Sentadilla Búlgara", 
-                muscle: "Cuádriceps", 
-                equip: "Mancuernas", 
-                description: "Apoyá el empeine del pie trasero en un banco. Flexioná la pierna delantera hasta que el muslo esté paralelo al suelo. Mantené el torso firme." 
-            },
-            { 
-                name: "Peso Muerto Rumano", 
-                muscle: "Isquiosurales", 
-                equip: "Barra", 
-                description: "Flexión leve de rodillas, empujá la cadera hacia atrás sintiendo el estiramiento en los isquios. Mantené la barra pegada a las piernas." 
-            },
-            { 
-                name: "Peso Muerto Convencional", 
-                muscle: "Espalda Baja", 
-                equip: "Barra", 
-                description: "Posición inicial con cadera baja. Empuje desde las piernas coordinado con la extensión de cadera. Barra pegada al cuerpo durante todo el recorrido." 
-            },
-            { 
-                name: "Sillón de Cuádriceps (Extensión)", 
-                muscle: "Cuádriceps", 
-                equip: "Máquina", 
-                description: "Alineá la rodilla con el eje de la máquina. Extendé las piernas por completo y bajá reteniendo el peso en la fase excéntrica (bajada controlada)." 
-            },
-            { 
-                name: "Camilla de Isquios (Tumbado)", 
-                muscle: "Isquiosurales", 
-                equip: "Máquina", 
-                description: "Cadera firme contra el banco. Flexioná llevando el rodillo hacia los glúteos y volvé lentamente sin soltar la tensión de golpe." 
-            },
-            { 
-                name: "Hip Thrust", 
-                muscle: "Glúteos", 
-                equip: "Barra", 
-                description: "Espalda alta apoyada en el banco. Empujá con los talones y apretá los glúteos al máximo en la parte superior. No arquees la zona lumbar." 
-            },
-            { 
-                name: "Elevación de Talones De Pie", 
-                muscle: "Gemelos", 
-                equip: "Máquina", 
-                description: "Apoyá metatarsos en la plataforma. Bajá hasta sentir el estiramiento completo en la pantorrilla y elevá explosivo hasta la máxima contracción." 
-            },
-            { 
-                name: "Press de Banca Plano", 
-                muscle: "Pecho", 
-                equip: "Barra", 
-                description: "Retracción escapular firme. Bajá la barra hasta la parte media/baja del pecho y empujá explosivo. Mantené los pies firmes en el suelo." 
-            },
-            { 
-                name: "Press Inclinado", 
-                muscle: "Pecho", 
-                equip: "Mancuernas", 
-                description: "Banco a 30-45°. Retracción escapular. Bajá las mancuernas hasta la altura del pecho superior y empujá en un ligero arco hacia el centro." 
-            },
-            { 
-                name: "Aperturas con Mancuernas", 
-                muscle: "Pecho", 
-                equip: "Mancuernas", 
-                description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento del pecho y cerrá sintiendo la contracción. No conviertas el movimiento en un press." 
-            },
-            { 
-                name: "Cruce de Poleas", 
-                muscle: "Pecho", 
-                equip: "Polea", 
-                description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente y abajo, cruzando levemente las manos al final para máxima contracción del pectoral." 
-            },
-            { 
-                name: "Dominadas", 
-                muscle: "Espalda", 
-                equip: "Peso Corporal", 
-                description: "Agarre prono más ancho que los hombros. Traccioná llevando el pecho hacia la barra, deprimiendo las escápulas. Rango de recorrido completo." 
-            },
-            { 
-                name: "Jalón al Pecho", 
-                muscle: "Espalda", 
-                equip: "Polea", 
-                description: "Agarre más ancho que los hombros. Deprimí escápulas y traccioná la barra hacia el pecho superior, apuntando los codos hacia abajo y atrás." 
-            },
-            { 
-                name: "Remo con Barra", 
-                muscle: "Espalda", 
-                equip: "Barra", 
-                description: "Incliná el torso a unos 45-60 grados. Traccioná la barra hacia el ombligo, juntando las escápulas en la contracción. Mantené la zona lumbar neutra." 
-            },
-            { 
-                name: "Remo Gironda", 
-                muscle: "Espalda", 
-                equip: "Polea", 
-                description: "Sentado, rodillas levemente flexionadas. Traccioná el agarre hacia el abdomen manteniendo el torso recto y juntando las escápulas fuerte atrás." 
-            },
-            { 
-                name: "Press Militar", 
-                muscle: "Hombros", 
-                equip: "Barra", 
-                description: "De pie o sentado. Empujá la barra verticalmente sin usar impulso de las piernas. Contraé abdomen para proteger la lumbar." 
-            },
-            { 
-                name: "Elevaciones Laterales", 
-                muscle: "Hombros", 
-                equip: "Mancuernas", 
-                description: "Elevá las mancuernas hacia los lados con una ligerísima flexión de codo. El meñique debe apuntar ligeramente hacia arriba. Movimiento estricto." 
-            },
-            { 
-                name: "Pájaros (Posterior)", 
-                muscle: "Hombros", 
-                equip: "Mancuernas", 
-                description: "Torso inclinado paralelo al suelo. Elevá los brazos hacia los costados enfocando el esfuerzo en la parte posterior del hombro y trapecio." 
-            },
-            { 
-                name: "Curl de Bíceps", 
-                muscle: "Bíceps", 
-                equip: "Mancuernas", 
-                description: "Mantené los codos fijos a los costados del cuerpo. Subí contrayendo el bíceps y bajá de forma controlada (fase excéntrica)." 
-            },
-            { 
-                name: "Curl Martillo", 
-                muscle: "Bíceps", 
-                equip: "Mancuernas", 
-                description: "Agarre neutro (palmas mirándose). Subí manteniendo el codo fijo, ideal para trabajar el braquial y antebrazo junto al bíceps." 
-            },
-            { 
-                name: "Curl con Barra Z", 
-                muscle: "Bíceps", 
-                equip: "Barra", 
-                description: "Agarre cómodo en la curvatura de la barra. Evitá balanceos con el torso. Máxima tensión en el ascenso y retención en el descenso." 
-            },
-            { 
-                name: "Extensión de Tríceps", 
-                muscle: "Tríceps", 
-                equip: "Polea", 
-                description: "Codos pegados al cuerpo. Extendé los brazos completamente hacia abajo contrayendo el tríceps. Subí hasta que el antebrazo pase los 90 grados." 
-            },
-            { 
-                name: "Press Francés", 
-                muscle: "Tríceps", 
-                equip: "Barra", 
-                description: "Tumbado en banco. Bajá la barra Z hacia la frente o detrás de la cabeza flexionando solo los codos. Extensión completa arriba." 
-            },
-            { 
-                name: "Fondos en Paralelas", 
-                muscle: "Tríceps", 
-                equip: "Peso Corporal", 
-                description: "Torso erguido para enfocar en tríceps (o inclinado para pecho). Bajá hasta los 90 grados de codo y empujá verticalmente." 
-            },
-            { 
-                name: "Crunch Abdominal", 
-                muscle: "Abdomen", 
-                equip: "Peso Corporal", 
-                description: "Tumbado boca arriba. Elevá los hombros del suelo contrayendo el abdomen. Movimiento corto enfocado en el core, sin tirar del cuello." 
-            },
-            { 
-                name: "Plancha Isométrica", 
-                muscle: "Abdomen", 
-                equip: "Peso Corporal", 
-                description: "Apoyo de antebrazos y puntas de pies. Cuerpo en línea recta. Apretá glúteos y abdomen durante todo el tiempo estipulado." 
-            },
-            { 
-                name: "Sentadilla Frontal", 
-                muscle: "Cuádriceps", 
-                equip: "Barra", 
-                description: "Barra apoyada en deltoides anteriores (clavículas). Codos bien arriba. Requiere mayor upright del torso. Gran enfoque en cuádriceps." 
-            },
-            { 
-                name: "Zancadas Estáticas", 
-                muscle: "Cuádriceps", 
-                equip: "Mancuernas", 
-                description: "De pie, un pie adelantado. Bajá en línea recta flexionando ambas rodillas a 90°. Empujá con el pie delantero para subir." 
-            },
-            { 
-                name: "Prensa Vertical", 
-                muscle: "Cuádriceps", 
-                equip: "Máquina", 
-                description: "Tumbado boca arriba, empujando la plataforma hacia el techo. Gran aislamiento y seguridad para la zona lumbar. Descenso profundo." 
-            },
-            { 
-                name: "Curl Femoral Sentado", 
-                muscle: "Isquiosurales", 
-                equip: "Máquina", 
-                description: "Sujetate firme a los agarres. Flexioná las piernas llevando el rodillo hacia abajo y atrás, reteniendo en la subida." 
-            },
-            { 
-                name: "Patada de Glúteo", 
-                muscle: "Glúteos", 
-                equip: "Polea", 
-                description: "Tobillera puesta. Torso firme. Extensión de cadera hacia atrás contrayendo el glúteo en el punto máximo. No uses la zona lumbar." 
-            },
-            { 
-                name: "Dominadas Supinas", 
-                muscle: "Espalda", 
-                equip: "Peso Corporal", 
-                description: "Agarre palmas hacia vos (supino). Trabajo excelente para dorsales con gran implicación e hipertrofia para los bíceps." 
-            },
-            { 
-                name: "Remo en Barra T", 
-                muscle: "Espalda", 
-                equip: "Máquina", 
-                description: "Pecho apoyado (o de pie inclinado). Traccioná llevando los codos hacia atrás y arriba, maximizando el grosor de la espalda." 
-            },
-            { 
-                name: "Press Arnold", 
-                muscle: "Hombros", 
-                equip: "Mancuernas", 
-                description: "Inicia con palmas hacia tu cara. Al empujar hacia arriba, rotá las muñecas para terminar con palmas al frente. Gran recorrido articular." 
-            },
-            { 
-                name: "Face Pull", 
-                muscle: "Hombros", 
-                equip: "Polea", 
-                description: "Agarre de cuerda. Traccioná hacia tu cara separando las manos y rotando los hombros hacia atrás (rotación externa). Excelente para postura y hombro posterior." 
-            },
-            { 
-                name: "Curl Predicador", 
-                muscle: "Bíceps", 
-                equip: "Barra Z", 
-                description: "Brazos apoyados en el pupitre. Aísla completamente el bíceps eliminando cualquier balanceo. No extiendas el codo al 100% abajo por seguridad." 
-            },
-            { 
-                name: "Rueda Abdominal", 
-                muscle: "Abdomen", 
-                equip: "Equipamiento", 
-                description: "De rodillas, deslizá la rueda hacia adelante manteniendo el abdomen duro y la cadera retrovertida. Volvé usando la fuerza del core." 
-            }
+            { name: "Prensa 45° (Máquina)", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop", description: "Apoyá la espalda completamente. Pies en el centro de la plataforma ancho de hombros." },
+            { name: "Prensa Horizontal Tumbado", muscle: "Cuádriceps", equip: "Máquina", image: "https://images.unsplash.com/photo-1584466977773-e625c37cdd50?q=80&w=150&auto=format&fit=crop", description: "Misma biomecánica que la prensa 45° pero vector horizontal." },
+            { name: "Sentadilla (Máquina Smith)", muscle: "Glúteos", equip: "Máquina", image: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=150&auto=format&fit=crop", description: "Adelantá ligeramente los pies para mayor enfoque en glúteos." },
+            { name: "Sentadilla A Una Pierna Asistida", muscle: "Cuádriceps", equip: "Peso Corporal", description: "Usá un soporte para equilibrarte. Bajá con una sola pierna." },
+            { name: "Sentadilla Barra Alta", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada sobre los trapecios. Pecho arriba." },
+            { name: "Sentadilla Libre", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada de forma estable en la espalda." },
+            { name: "Sentadilla Búlgara", muscle: "Cuádriceps", equip: "Mancuernas", description: "Apoyá el empeine del pie trasero en un banco." },
+            { name: "Peso Muerto Rumano", muscle: "Isquiosurales", equip: "Barra", description: "Flexión leve de rodillas, empujá la cadera hacia atrás." },
+            { name: "Peso Muerto Convencional", muscle: "Espalda Baja", equip: "Barra", description: "Posición inicial con cadera baja. Empuje desde las piernas." },
+            { name: "Sillón de Cuádriceps (Extensión)", muscle: "Cuádriceps", equip: "Máquina", description: "Alineá la rodilla con el eje de la máquina." },
+            { name: "Camilla de Isquios (Tumbado)", muscle: "Isquiosurales", equip: "Máquina", description: "Cadera firme contra el banco." },
+            { name: "Hip Thrust", muscle: "Glúteos", equip: "Barra", description: "Espalda alta apoyada en el banco. Empujá con los talones." },
+            { name: "Elevación de Talones De Pie", muscle: "Gemelos", equip: "Máquina", description: "Apoyá metatarsos en la plataforma." },
+            { name: "Press de Banca Plano", muscle: "Pecho", equip: "Barra", description: "Retracción escapular firme." },
+            { name: "Press Inclinado", muscle: "Pecho", equip: "Mancuernas", description: "Banco a 30-45°. Retracción escapular." },
+            { name: "Aperturas con Mancuernas", muscle: "Pecho", equip: "Mancuernas", description: "Brazos ligeramente flexionados. Abrí controlando el estiramiento." },
+            { name: "Cruce de Poleas", muscle: "Pecho", equip: "Polea", description: "Torso ligeramente inclinado. Llevá las poleas hacia el frente." },
+            { name: "Dominadas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre prono más ancho que los hombros." },
+            { name: "Jalón al Pecho", muscle: "Espalda", equip: "Polea", description: "Agarre más ancho que los hombros. Deprimí escápulas." },
+            { name: "Remo con Barra", muscle: "Espalda", equip: "Barra", description: "Incliná el torso a unos 45-60 grados." },
+            { name: "Remo Gironda", muscle: "Espalda", equip: "Polea", description: "Sentado, rodillas levemente flexionadas." },
+            { name: "Press Militar", muscle: "Hombros", equip: "Barra", description: "De pie o sentado. Empujá la barra verticalmente." },
+            { name: "Elevaciones Laterales", muscle: "Hombros", equip: "Mancuernas", description: "Elevá las mancuernas hacia los lados." },
+            { name: "Pájaros (Posterior)", muscle: "Hombros", equip: "Mancuernas", description: "Torso inclinado paralelo al suelo." },
+            { name: "Curl de Bíceps", muscle: "Bíceps", equip: "Mancuernas", description: "Mantené los codos fijos a los costados." },
+            { name: "Curl Martillo", muscle: "Bíceps", equip: "Mancuernas", description: "Agarre neutro (palmas mirándose)." },
+            { name: "Curl con Barra Z", muscle: "Bíceps", equip: "Barra", description: "Agarre cómodo en la curvatura de la barra." },
+            { name: "Extensión de Tríceps", muscle: "Tríceps", equip: "Polea", description: "Codos pegados al cuerpo." },
+            { name: "Press Francés", muscle: "Tríceps", equip: "Barra", description: "Tumbado en banco. Bajá la barra Z hacia la frente." },
+            { name: "Fondos en Paralelas", muscle: "Tríceps", equip: "Peso Corporal", description: "Torso erguido para enfocar en tríceps." },
+            { name: "Crunch Abdominal", muscle: "Abdomen", equip: "Peso Corporal", description: "Tumbado boca arriba. Elevá los hombros del suelo." },
+            { name: "Plancha Isométrica", muscle: "Abdomen", equip: "Peso Corporal", description: "Apoyo de antebrazos y puntas de pies." },
+            { name: "Sentadilla Frontal", muscle: "Cuádriceps", equip: "Barra", description: "Barra apoyada en deltoides anteriores." },
+            { name: "Zancadas Estáticas", muscle: "Cuádriceps", equip: "Mancuernas", description: "De pie, un pie adelantado. Bajá en línea recta." },
+            { name: "Prensa Vertical", muscle: "Cuádriceps", equip: "Máquina", description: "Tumbado boca arriba, empujando hacia el techo." },
+            { name: "Curl Femoral Sentado", muscle: "Isquiosurales", equip: "Máquina", description: "Sujetate firme a los agarres. Flexioná las piernas." },
+            { name: "Patada de Glúteo", muscle: "Glúteos", equip: "Polea", description: "Tobillera puesta. Torso firme." },
+            { name: "Dominadas Supinas", muscle: "Espalda", equip: "Peso Corporal", description: "Agarre palmas hacia vos (supino)." },
+            { name: "Remo en Barra T", muscle: "Espalda", equip: "Máquina", description: "Pecho apoyado (o de pie inclinado)." },
+            { name: "Press Arnold", muscle: "Hombros", equip: "Mancuernas", description: "Inicia con palmas hacia tu cara." },
+            { name: "Face Pull", muscle: "Hombros", equip: "Polea", description: "Agarre de cuerda. Traccioná hacia tu cara." },
+            { name: "Curl Predicador", muscle: "Bíceps", equip: "Barra Z", description: "Brazos apoyados en el pupitre." },
+            { name: "Rueda Abdominal", muscle: "Abdomen", equip: "Equipamiento", description: "De rodillas, deslizá la rueda hacia adelante." }
         ];
 
         let audioCtx = null;
@@ -608,6 +367,32 @@
         function ExerciseInfoModal({ exercise, isTeacher, onClose, onUpdate }) {
             const [localDesc, setLocalDesc] = useState(exercise.description || '');
             const [localLink, setLocalLink] = useState(exercise.link || '');
+            const [uploading, setUploading] = useState(false);
+
+            // MEJORA 1: Lógica de subida de video directa a Supabase
+            const handleVideoUpload = async (file) => {
+                if (!file) return;
+                try {
+                    setUploading(true);
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${generateId()}.${fileExt}`;
+                    
+                    const { data, error } = await supabase.storage.from('videos').upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+                    
+                    if (error) throw error;
+                    
+                    const { data: urlData } = supabase.storage.from('videos').getPublicUrl(fileName);
+                    setLocalLink(urlData.publicUrl);
+                } catch (error) {
+                    console.error('Error al subir video:', error);
+                    alert("Error al subir. Asegurate de que el video no sea demasiado pesado y tu internet esté estable.");
+                } finally {
+                    setUploading(false);
+                }
+            };
 
             const handleSave = () => {
                 if (isTeacher && onUpdate) {
@@ -618,7 +403,7 @@
 
             return (
                 <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={handleSave}>
-                    <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                    <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar" onClick={e => e.stopPropagation()}>
                         <button onClick={handleSave} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                         
                         <div className="flex items-center gap-4 mb-5 pr-6">
@@ -648,22 +433,42 @@
                                 <p className="text-gray-300 text-sm leading-relaxed">{exercise.description || 'Sin descripción detallada por el momento.'}</p>
                             )}
 
+                            {/* MEJORA 1: Interfaz de Subida y Reproductor de Video */}
                             {isTeacher ? (
-                                <div className="mt-2">
-                                    <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2"><i className="fa-solid fa-link text-brand-500 mr-1.5"></i> Enlace a Video</h4>
-                                    <input 
-                                        type="url"
-                                        className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm"
-                                        placeholder="Ej: https://youtube.com/..."
-                                        value={localLink ?? ''}
-                                        onChange={(e) => setLocalLink(e.target.value)}
-                                    />
+                                <div className="mt-2 border-t border-white/5 pt-3">
+                                    <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2"><i className="fa-solid fa-video text-brand-500 mr-1.5"></i> Video Demostrativo</h4>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="relative">
+                                            <input type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                            <div className="bg-brand-500/10 border border-brand-500/30 text-brand-500 font-bold text-xs p-3 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-500/20 transition-colors">
+                                                {uploading ? <><i className="fa-solid fa-spinner fa-spin"></i> Subiendo video...</> : <><i className="fa-solid fa-cloud-arrow-up"></i> Subir Video (MP4)</>}
+                                            </div>
+                                        </div>
+                                        <div className="text-center text-[10px] text-gray-500 font-bold uppercase">O</div>
+                                        <input 
+                                            type="url"
+                                            className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm"
+                                            placeholder="Pegar link de YouTube..."
+                                            value={localLink ?? ''}
+                                            onChange={(e) => setLocalLink(e.target.value)}
+                                        />
+                                        {localLink && (localLink.includes('supabase.co') || localLink.endsWith('.mp4') || localLink.endsWith('.mov')) && (
+                                            <video controls src={localLink} className="w-full rounded-xl mt-2 border border-white/10 bg-black shadow-inner" preload="metadata"></video>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
-                                exercise.link && (
-                                    <a href={exercise.link} target="_blank" rel="noopener noreferrer" className="mt-2 bg-dark-900 hover:bg-black p-3 rounded-xl flex items-center justify-center gap-2 text-brand-500 font-bold text-sm border border-brand-500/30 transition-colors shadow-inner">
-                                        <i className="fa-brands fa-youtube text-red-500 text-lg"></i> Ver video explicativo
-                                    </a>
+                                localLink && (
+                                    <div className="mt-2 border-t border-white/5 pt-3">
+                                        <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2"><i className="fa-solid fa-play text-brand-500 mr-1.5"></i> Ver Ejecución</h4>
+                                        {(localLink.includes('supabase.co') || localLink.endsWith('.mp4') || localLink.endsWith('.mov')) ? (
+                                            <video controls src={localLink} className="w-full rounded-xl border border-white/10 bg-black shadow-inner" preload="metadata" playsInline></video>
+                                        ) : (
+                                            <a href={localLink} target="_blank" rel="noopener noreferrer" className="bg-dark-900 hover:bg-black p-3 rounded-xl flex items-center justify-center gap-2 text-brand-500 font-bold text-sm border border-brand-500/30 transition-colors shadow-inner">
+                                                <i className="fa-brands fa-youtube text-red-500 text-lg"></i> Ver video en YouTube
+                                            </a>
+                                        )}
+                                    </div>
                                 )
                             )}
                         </div>
@@ -709,7 +514,7 @@
             };
 
             const handleWeekConfigChange = (weekNum, field, value) => {
-                const updatedWeeks = JSON.parse(JSON.stringify(localEx.weeks || {}));
+                const updatedWeeks = deepClone(localEx.weeks || {});
                 if (!updatedWeeks[weekNum]) {
                     updatedWeeks[weekNum] = { sets: localEx.sets ?? '4', reps: localEx.reps ?? '10', rir: localEx.rir ?? '2' };
                 }
@@ -1127,6 +932,8 @@
             const [activeDayId, setActiveDayId] = useState(null);
             
             const [activeWeek, setActiveWeek] = useState(1); 
+            
+            // MEJORA 2: ESTADOS DEL CRONÓMETRO PERSISTENTE
             const [isTrainingStarted, setIsTrainingStarted] = useState(false);
             const [trainingTime, setTrainingTime] = useState(0);
             
@@ -1138,7 +945,6 @@
 
             const [toast, setToast] = useState(null);
             
-            // Nuevos estados para los features
             const [showLibraryModal, setShowLibraryModal] = useState(false);
             const [showClientProgressModal, setShowClientProgressModal] = useState(false);
 
@@ -1162,7 +968,7 @@
                 
                 setGlobalData(prev => {
                     if (!prev) return prev;
-                    const cloned = JSON.parse(JSON.stringify(prev));
+                    const cloned = deepClone(prev); // MEJORA 5: Clonación Profunda Optimizada
                     mutationCallback(cloned);
                     pendingDataRef.current = cloned; 
                     return cloned;
@@ -1202,14 +1008,13 @@
                 showToast('Métrica actualizada correctamente', 'info');
             };
 
-            // ---- NUEVAS FUNCIONES: LIBRERÍA DE PLANTILLAS ----
             const saveToLibrary = (clientId, dayId) => {
                 mutateAndSave((freshData) => {
                     const dayToSave = freshData.routines[clientId]?.find(d => d.id === dayId);
                     if (!dayToSave) return;
                     if (!freshData.library) freshData.library = [];
-                    const clonedDay = JSON.parse(JSON.stringify(dayToSave));
-                    clonedDay.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    const clonedDay = deepClone(dayToSave);
+                    clonedDay.id = generateId();
                     freshData.library.push(clonedDay);
                 });
                 showToast('Plantilla guardada en la Librería Global');
@@ -1220,14 +1025,14 @@
                     const template = freshData.library?.find(t => t.id === libraryTemplateId);
                     if (!template) return;
                     if (!freshData.routines[clientId]) freshData.routines[clientId] = [];
-                    const clonedDay = JSON.parse(JSON.stringify(template));
-                    clonedDay.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    const clonedDay = deepClone(template);
+                    clonedDay.id = generateId();
                     if(clonedDay.sections) {
                         clonedDay.sections.forEach(sec => {
-                            sec.id = Math.random().toString(36).substr(2, 9);
+                            sec.id = generateId();
                             if(sec.exercises) {
                                 sec.exercises.forEach(ex => {
-                                    ex.id = Math.random().toString(36).substr(2, 9);
+                                    ex.id = generateId();
                                 });
                             }
                         });
@@ -1248,7 +1053,6 @@
                     showToast('Plantilla eliminada de la librería');
                 }
             };
-            // ------------------------------------------------
 
             useEffect(() => {
                 if (FECHA_VENCIMIENTO) {
@@ -1276,31 +1080,29 @@
                 return () => { supabase.removeChannel(channel); };
             }, [isLicenseValid]);
 
-            // ---- CRONOMETRO AHORA CORRE EN CUALQUIER PANTALLA ----
+            // MEJORA 2: LÓGICA DE CRONÓMETRO GLOBAL PERSISTENTE Y ANTI-RECARGAS
             useEffect(() => {
                 let interval = null;
                 if (isTrainingStarted) {
-                    interval = setInterval(() => setTrainingTime(t => t + 1), 1000);
-                } else { clearInterval(interval); }
+                    let startTime = parseInt(localStorage.getItem(`bravo_timer_start_${CLIENTE_ID}`));
+                    if (!startTime) {
+                        startTime = Date.now();
+                        localStorage.setItem(`bravo_timer_start_${CLIENTE_ID}`, startTime.toString());
+                    }
+                    
+                    const updateTimer = () => {
+                        const now = Date.now();
+                        setTrainingTime(Math.floor((now - startTime) / 1000));
+                    };
+                    
+                    updateTimer(); // Llamada inicial
+                    interval = setInterval(updateTimer, 1000);
+                } else { 
+                    clearInterval(interval); 
+                    localStorage.removeItem(`bravo_timer_start_${CLIENTE_ID}`);
+                }
                 return () => clearInterval(interval);
             }, [isTrainingStarted]);
-
-            useEffect(() => {
-                let restInterval = null;
-                if (restTime > 0) {
-                    restInterval = setInterval(() => {
-                        setRestTime(t => {
-                            if (t <= 1) {
-                                if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-                                playAlarm();
-                                return 0;
-                            }
-                            return t - 1;
-                        });
-                    }, 1000);
-                }
-                return () => clearInterval(restInterval);
-            }, [restTime > 0, restTimerKey]);
 
             // MANEJO DE HISTORY API PARA BLOQUEAR EL GESTO/BOTÓN DE ATRÁS EN ENTRENAMIENTO
             useEffect(() => {
@@ -1336,6 +1138,23 @@
                 };
             }, [isTrainingStarted]);
 
+            useEffect(() => {
+                let restInterval = null;
+                if (restTime > 0) {
+                    restInterval = setInterval(() => {
+                        setRestTime(t => {
+                            if (t <= 1) {
+                                if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+                                playAlarm();
+                                return 0;
+                            }
+                            return t - 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(restInterval);
+            }, [restTime > 0, restTimerKey]);
+
             const startRest = (timeString) => {
                 let t = 90;
                 if (timeString) { 
@@ -1364,7 +1183,6 @@
                 return `${m}:${s}`;
             };
 
-            // AHORA ACEPTA EL ID DEL CLIENTE PARA VER PROGRESO
             const getTonnageForWeek = (weekNum, overrideClientId = null) => {
                 const targetId = overrideClientId || currentUser?.id;
                 if (!globalData || !targetId || !globalData.progress) return 0;
@@ -1386,6 +1204,62 @@
                 return total;
             };
 
+            const getMuscleVolumeForWeek = (clientId, weekNum) => {
+                if (!globalData || !globalData.routines || !globalData.routines[clientId]) return [];
+                const counts = {};
+                globalData.routines[clientId].forEach(day => {
+                    const sections = day.sections || [{ exercises: day.exercises || [] }];
+                    sections.forEach(sec => {
+                        (sec.exercises || []).forEach(ex => {
+                            const muscle = ex.muscle || 'Varios';
+                            const wCfg = ex.weeks?.[weekNum] || { sets: ex.sets || '4' };
+                            const sets = parseInt(wCfg.sets) || 0;
+                            if (sets > 0) {
+                                counts[muscle] = (counts[muscle] || 0) + sets;
+                            }
+                        });
+                    });
+                });
+                return Object.entries(counts).sort((a,b) => b[1] - a[1]);
+            };
+
+            const applyDeloadToWeek = (clientId) => {
+                const weekStr = window.prompt("¿A qué semana querés aplicarle la descarga? (Escribí 1, 2, 3 o 4)", "4");
+                const targetWeek = parseInt(weekStr);
+                if (isNaN(targetWeek) || targetWeek < 1 || targetWeek > 4) {
+                    if (weekStr !== null) showToast("Semana inválida. Debe ser del 1 al 4.", "error");
+                    return;
+                }
+                
+                if (!window.confirm(`Esto reducirá 1 serie y aumentará el RIR en todos los ejercicios planificados de la Semana ${targetWeek}. ¿Proceder?`)) return;
+
+                mutateAndSave((freshData) => {
+                    const routines = freshData.routines[clientId] || [];
+                    routines.forEach(day => {
+                        const sections = day.sections || [{ exercises: day.exercises || [] }];
+                        sections.forEach(sec => {
+                            (sec.exercises || []).forEach(ex => {
+                                if (!ex.weeks) ex.weeks = {};
+                                const currentSets = parseInt(ex.weeks[targetWeek]?.sets ?? ex.sets ?? '4');
+                                const currentRirRaw = ex.weeks[targetWeek]?.rir ?? ex.rir ?? '2';
+                                
+                                const currentRirVal = parseInt(currentRirRaw);
+                                const newSets = Math.max(1, currentSets - 1);
+                                const newRir = isNaN(currentRirVal) ? '4' : (currentRirVal + 2).toString();
+
+                                ex.weeks[targetWeek] = {
+                                    ...ex.weeks[targetWeek],
+                                    sets: newSets.toString(),
+                                    reps: ex.weeks[targetWeek]?.reps ?? ex.reps ?? '10',
+                                    rir: newRir
+                                };
+                            });
+                        });
+                    });
+                });
+                showToast(`Descarga aplicada con éxito a la Semana ${targetWeek}`);
+            };
+
             const fetchData = async () => {
                 try {
                     const { data } = await supabase.from('bravo_state').select('data').eq('id', CLIENTE_ID).single();
@@ -1402,7 +1276,14 @@
                                 const client = dbData.clients?.find(c => c.id === parsed.id);
                                 if (client) {
                                     setCurrentUser(client);
-                                    setView('cliente_listado');
+                                    
+                                    // RECUPERAR SESIÓN SI HABÍA UN CRONÓMETRO CORRIENDO
+                                    if (localStorage.getItem(`bravo_timer_start_${CLIENTE_ID}`)) {
+                                        setIsTrainingStarted(true);
+                                        setView('cliente_entrenamiento');
+                                    } else {
+                                        setView('cliente_listado');
+                                    }
                                 }
                             }
                         } catch (parseError) {
@@ -1429,7 +1310,13 @@
                     if (client) { 
                         localStorage.setItem(`bravo_session_${CLIENTE_ID}`, JSON.stringify({type: 'cliente', id: client.id}));
                         setCurrentUser(client); 
-                        setView('cliente_listado'); 
+                        
+                        if (localStorage.getItem(`bravo_timer_start_${CLIENTE_ID}`)) {
+                            setIsTrainingStarted(true);
+                            setView('cliente_entrenamiento');
+                        } else {
+                            setView('cliente_listado');
+                        }
                     } else { showToast('PIN incorrecto. Revisalo bien.', 'error'); }
                 }
                 setPinInput('');
@@ -1444,7 +1331,7 @@
                 }
 
                 const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-                const newClient = { id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), name: newClientName, pin: newPin };
+                const newClient = { id: generateId(), name: newClientName, pin: newPin };
                 
                 mutateAndSave((freshData) => {
                     if(!freshData.clients) freshData.clients = [];
@@ -1485,9 +1372,9 @@
                 mutateAndSave((freshData) => {
                     if(!freshData.routines[clientId]) freshData.routines[clientId] = [];
                     freshData.routines[clientId].push({ 
-                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), 
+                        id: generateId(), 
                         name: "Nueva Plantilla", 
-                        sections: [ { id: Math.random().toString(36).substr(2, 9), name: 'Bloque Principal', exercises: [] } ] 
+                        sections: [ { id: generateId(), name: 'Bloque Principal', exercises: [] } ] 
                     });
                 });
             };
@@ -1520,15 +1407,15 @@
 
                     const clonedSections = (dayToClone.sections || [{ name: 'Bloque Principal', exercises: dayToClone.exercises || [] }]).map(sec => ({
                         ...sec,
-                        id: Math.random().toString(36).substr(2, 9),
+                        id: generateId(),
                         exercises: (sec.exercises || []).map(ex => ({
                             ...ex,
-                            id: Math.random().toString(36).substr(2, 9)
+                            id: generateId()
                         }))
                     }));
 
                     const newDay = {
-                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                        id: generateId(),
                         name: dayToClone.name + " (Copia)",
                         sections: clonedSections
                     };
@@ -1545,15 +1432,15 @@
 
                     const clonedSections = (dayToClone.sections || [{ name: 'Bloque Principal', exercises: dayToClone.exercises || [] }]).map(sec => ({
                         ...sec,
-                        id: Math.random().toString(36).substr(2, 9),
+                        id: generateId(),
                         exercises: (sec.exercises || []).map(ex => ({
                             ...ex,
-                            id: Math.random().toString(36).substr(2, 9)
+                            id: generateId()
                         }))
                     }));
 
                     const newDay = {
-                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                        id: generateId(),
                         name: dayToClone.name,
                         sections: clonedSections
                     };
@@ -1573,7 +1460,7 @@
                         day.sections = [{ id: 'default', name: 'Bloque Principal', exercises: day.exercises || [] }];
                         delete day.exercises;
                     }
-                    day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Nuevo Bloque', exercises: [] });
+                    day.sections.push({ id: generateId(), name: 'Nuevo Bloque', exercises: [] });
                 });
             };
 
@@ -1598,7 +1485,7 @@
                     
                     day.sections = day.sections.filter(s => s.id !== secId);
                     if(day.sections.length === 0) {
-                        day.sections.push({ id: Math.random().toString(36).substr(2, 9), name: 'Bloque Principal', exercises: [] });
+                        day.sections.push({ id: generateId(), name: 'Bloque Principal', exercises: [] });
                     }
                 });
             };
@@ -1626,7 +1513,7 @@
                     const sec = day.sections.find(s => s.id === secId) || day.sections[0];
                     if (sec && sec.exercises) {
                         sec.exercises.push({ 
-                            id: Math.random().toString(36).substr(2, 9), 
+                            id: generateId(), 
                             name: exerciseName,
                             image: imageUrl, 
                             description: description,
@@ -1637,7 +1524,7 @@
                         });
                     } else if (sec) {
                         sec.exercises = [{
-                            id: Math.random().toString(36).substr(2, 9), 
+                            id: generateId(), 
                             name: exerciseName,
                             image: imageUrl, 
                             description: description,
@@ -1720,7 +1607,6 @@
                 });
             };
 
-            // Cálculo dinámico del tema
             const currentTheme = THEMES[globalData?.themeColor] || THEMES.green;
             const appStyleVars = {
                 '--brand-500': currentTheme[500],
@@ -1755,29 +1641,57 @@
                         />
                     )}
 
-                    {/* MODAL PARA PROGRESO DEL ALUMNO (VISTA PROFESOR) */}
                     {showClientProgressModal && activeClient && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowClientProgressModal(false)}>
-                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setShowClientProgressModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 <h3 className="text-white font-bold text-lg mb-2"><i className="fa-solid fa-chart-line text-brand-500"></i> Progreso de {activeClient.name}</h3>
-                                <p className="text-xs text-gray-400 mb-6">Volumen de carga (Tonelaje) por semana</p>
-                                <div className="space-y-4">
-                                    {[1, 2, 3, 4].map(w => {
-                                        const tonnage = getTonnageForWeek(w, activeClient.id);
-                                        return (
-                                            <div key={w} className="bg-dark-800 p-3 rounded-xl border border-white/5 flex justify-between items-center">
-                                                <span className="text-sm font-bold text-gray-300">Semana {w}</span>
-                                                <span className="text-base font-black text-brand-500">{tonnage.toLocaleString()} <span className="text-[10px] text-gray-500">kg</span></span>
-                                            </div>
-                                        );
-                                    })}
+                                
+                                <div className="overflow-y-auto hide-scrollbar flex-1 pb-4">
+                                    <p className="text-xs text-gray-400 mb-4">Volumen de carga (Tonelaje) por semana</p>
+                                    <div className="space-y-4">
+                                        {[1, 2, 3, 4].map(w => {
+                                            const tonnage = getTonnageForWeek(w, activeClient.id);
+                                            return (
+                                                <div key={w} className="bg-dark-800 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                                    <span className="text-sm font-bold text-gray-300">Semana {w}</span>
+                                                    <span className="text-base font-black text-brand-500">{tonnage.toLocaleString()} <span className="text-[10px] text-gray-500">kg</span></span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="mt-6 border-t border-white/5 pt-4">
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Volumen Planificado (Series)</h4>
+                                        <div className="flex bg-dark-800/90 rounded-xl p-1 mb-3 border border-dark-600">
+                                            {[1, 2, 3, 4].map(num => (
+                                                <button key={num} onClick={() => setActiveWeek(num)} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeWeek === num ? 'bg-brand-500 text-white' : 'text-gray-400 hover:text-white'}`}>S{num}</button>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-2">
+                                            {(() => {
+                                                const muscleData = getMuscleVolumeForWeek(activeClient.id, activeWeek);
+                                                if (muscleData.length === 0) return <p className="text-xs text-gray-500 text-center py-2">No hay ejercicios asignados en esta semana.</p>;
+                                                const maxSets = Math.max(...muscleData.map(m => m[1]), 10);
+                                                return muscleData.map(([muscle, sets]) => (
+                                                    <div key={muscle}>
+                                                        <div className="flex justify-between items-end mb-1">
+                                                            <span className="text-[10px] font-bold text-gray-300">{muscle}</span>
+                                                            <span className="text-[10px] font-black text-brand-500">{sets} s.</span>
+                                                        </div>
+                                                        <div className="w-full bg-dark-900 rounded-full h-1.5 border border-dark-600 overflow-hidden">
+                                                            <div className="bg-brand-500 h-full rounded-full" style={{ width: `${Math.min(100, (sets / maxSets) * 100)}%` }}></div>
+                                                        </div>
+                                                    </div>
+                                                ));
+                                            })()}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* MODAL DE LIBRERÍA DE PLANTILLAS */}
                     {showLibraryModal && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowLibraryModal(false)}>
                             <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
@@ -1982,6 +1896,10 @@
                                             <button onClick={() => setShowLibraryModal(true)} className="mt-3 flex items-center justify-center gap-2 text-brand-500 font-black w-full bg-dark-800 p-4 rounded-2xl hover:bg-dark-700 transition-colors shadow-sm border border-brand-500/30 uppercase text-xs tracking-wider">
                                                 <i className="fa-solid fa-book-bookmark text-base"></i> Importar de Librería
                                             </button>
+                                            
+                                            <button onClick={() => applyDeloadToWeek(activeClient.id)} className="mt-3 flex items-center justify-center gap-2 text-cyan-400 font-black w-full bg-cyan-900/20 p-4 rounded-2xl hover:bg-cyan-900/40 transition-colors shadow-sm border border-cyan-500/30 uppercase text-xs tracking-wider">
+                                                <i className="fa-solid fa-arrow-trend-down text-base"></i> Aplicar Descarga Rápida
+                                            </button>
                                         </div>
                                     </>
                                 )
@@ -2010,7 +1928,7 @@
                                             <button onClick={addClient} className="bg-brand-500 rounded-xl w-11 h-11 flex items-center justify-center text-white hover:bg-brand-600 transition-colors shadow-md shadow-brand-500/30 font-bold"><i className="fa-solid fa-plus"></i></button>
                                         </div>
 
-                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App (Marca Blanca)</h3>
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Configuración de la App</h3>
                                         <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4 shadow-md mb-6">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
@@ -2041,7 +1959,6 @@
                                                     onBlur={(e) => updateAppSetting('profesorName', e.target.value)}
                                                     placeholder="Ej: Lautaro Bravo"
                                                 />
-                                                <p className="text-[9px] text-gray-500 mt-1">Este nombre aparecerá en la sección de perfil de tus alumnos.</p>
                                             </div>
 
                                             <div className="border-t border-dark-700 pt-3">
@@ -2071,7 +1988,6 @@
                                                     onBlur={(e) => updateAppSetting('globalAnnouncement', e.target.value)}
                                                     placeholder="Ej: Este feriado el gimnasio abre de 10 a 14hs..."
                                                 />
-                                                <p className="text-[9px] text-gray-500 mt-1">Se mostrará destacado al inicio de la app de cada alumno.</p>
                                             </div>
 
                                             <div className="border-t border-dark-700 pt-3">
@@ -2304,6 +2220,33 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <div className="glass-panel p-4 rounded-2xl border border-white/5">
+                                    <h3 className="font-black text-[10px] text-gray-500 uppercase tracking-widest mb-3">Volumen Semanal (Series Planificadas)</h3>
+                                    <div className="flex bg-dark-800/90 rounded-xl p-1 mb-3 border border-dark-600">
+                                        {[1, 2, 3, 4].map(num => (
+                                            <button key={num} onClick={() => setActiveWeek(num)} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${activeWeek === num ? 'bg-brand-500 text-white' : 'text-gray-400 hover:text-white'}`}>S{num}</button>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const muscleData = getMuscleVolumeForWeek(currentUser.id, activeWeek);
+                                            if (muscleData.length === 0) return <p className="text-xs text-gray-500 text-center py-2">No hay ejercicios asignados.</p>;
+                                            const maxSets = Math.max(...muscleData.map(m => m[1]), 10);
+                                            return muscleData.map(([muscle, sets]) => (
+                                                <div key={muscle}>
+                                                    <div className="flex justify-between items-end mb-1">
+                                                        <span className="text-xs font-bold text-gray-300">{muscle}</span>
+                                                        <span className="text-xs font-black text-brand-500">{sets} <span className="text-[9px] text-gray-500">series</span></span>
+                                                    </div>
+                                                    <div className="w-full bg-dark-900 rounded-full h-1.5 border border-dark-600 overflow-hidden">
+                                                        <div className="bg-brand-500 h-full rounded-full" style={{ width: `${Math.min(100, (sets / maxSets) * 100)}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
 
                                 <div className="glass-panel p-4 rounded-2xl border border-white/5">
                                     <h3 className="font-black text-[10px] text-gray-500 uppercase tracking-widest mb-3">Información de Cuenta</h3>
@@ -2328,7 +2271,7 @@
                         </div>
                     )}
 
-                    {/* BARRA DE NAVEGACIÓN INFERIOR */}
+                    {/* BARRA DE NAVEGACIÓN INFERIOR (ALUMNO) */}
                     {view.startsWith('cliente_') && view !== 'cliente_entrenamiento' && (
                         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 pb-5 z-20">
                             <button onClick={() => setView('cliente_listado')} className={`${view === 'cliente_listado' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
@@ -2346,6 +2289,7 @@
                         </div>
                     )}
 
+                    {/* VISTA: ENTRENAMIENTO EN CURSO */}
                     {view === 'cliente_entrenamiento' && (
                         !isTrainingStarted ? (
                             <div className="app-container pb-24 relative z-10 bg-dark-900">
@@ -2397,7 +2341,6 @@
                                 <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur p-4 border-t border-white/5 z-20">
                                     <button onClick={() => { 
                                         setIsTrainingStarted(true); 
-                                        setTrainingTime(0); 
                                         setRestTime(0); 
                                         unlockAudio(); 
                                         window.history.pushState({training: true}, '', window.location.href); 
@@ -2465,18 +2408,24 @@
                                     })()}
                                 </div>
 
+                                {/* MEJORA 3: BOTONES DE DESCANSO (+10s / -10s) */}
                                 {restTime > 0 && (
-                                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-6 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_var(--brand-glow-strong)] flex items-center gap-3 z-50 animate-bounce cursor-pointer uppercase border border-white/20" onClick={() => setRestTime(0)}>
-                                        <i className="fa-solid fa-stopwatch animate-pulse text-lg"></i>
-                                        Descanso: {Math.floor(restTime/60)}:{(restTime%60).toString().padStart(2,'0')}
-                                        <div className="ml-1 bg-black/20 hover:bg-black/40 transition-colors rounded-xl w-6 h-6 flex items-center justify-center text-xs"><i className="fa-solid fa-xmark"></i></div>
+                                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-5 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_var(--brand-glow-strong)] flex items-center gap-3 z-50 uppercase border border-white/20 w-max">
+                                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setRestTime(0)}>
+                                            <i className="fa-solid fa-stopwatch animate-pulse text-lg"></i>
+                                            {Math.floor(restTime/60)}:{(restTime%60).toString().padStart(2,'0')}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 border-l border-white/30 pl-3 ml-1">
+                                            <button onClick={(e) => { e.stopPropagation(); setRestTime(t => Math.max(1, t - 10)); }} className="bg-black/20 hover:bg-black/40 px-3 py-2 rounded-lg transition-colors text-xs flex items-center justify-center">-10s</button>
+                                            <button onClick={(e) => { e.stopPropagation(); setRestTime(t => t + 10); }} className="bg-black/20 hover:bg-black/40 px-3 py-2 rounded-lg transition-colors text-xs flex items-center justify-center">+10s</button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         )
                     )}
 
-                    {/* BANNER FLOTANTE DEL CRONÓMETRO GLOBAL */}
+                    {/* BANNER FLOTANTE DEL CRONÓMETRO GLOBAL CUANDO SE NAVEGA FUERA */}
                     {isTrainingStarted && view !== 'cliente_entrenamiento' && view.startsWith('cliente_') && (
                         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[400px] bg-dark-800 border border-brand-500/50 p-4 rounded-2xl shadow-[0_10px_30px_var(--brand-glow)] flex items-center justify-between z-[150] cursor-pointer" onClick={() => setView('cliente_entrenamiento')}>
                             <div className="flex items-center gap-3">
