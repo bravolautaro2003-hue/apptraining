@@ -21,7 +21,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'panel-pro-offline-v10';
+                const CACHE_NAME = 'panel-pro-offline-v11';
                 self.addEventListener('install', (e) => {
                     self.skipWaiting();
                 });
@@ -49,132 +49,81 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 
-                            500: 'rgb(var(--brand-500) / <alpha-value>)', 
-                            600: 'rgb(var(--brand-600) / <alpha-value>)' 
-                        },
-                        dark: { 
-                            950: '#050507', 
-                            900: '#0a0a0c', 
-                            800: '#131318', 
-                            700: '#1d1d24', 
-                            600: '#2c2c35' 
-                        }
+                        brand: { 500: 'rgb(var(--brand-500) / <alpha-value>)', 600: 'rgb(var(--brand-600) / <alpha-value>)' },
+                        dark: { 950: '#050507', 900: '#0a0a0c', 800: '#131318', 700: '#1d1d24', 600: '#2c2c35' }
                     },
                     animation: {
                         'toast-down': 'toastDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'fade-in': 'fadeIn 0.25s ease-out forwards',
                         'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'fill-bar': 'fillBar 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-fast': 'pulseFast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     },
                     keyframes: {
-                        toastDown: {
-                            '0%': { transform: 'translate(-50%, -120%)', opacity: 0 },
-                            '100%': { transform: 'translate(-50%, 0)', opacity: 1 },
-                        },
-                        fadeIn: {
-                            '0%': { opacity: 0, transform: 'translateY(-6px)' },
-                            '100%': { opacity: 1, transform: 'translateY(0)' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(100%)' },
-                            '100%': { transform: 'translateY(0)' },
-                        },
-                        fillBar: {
-                            '0%': { width: '0%' },
-                        }
+                        toastDown: { '0%': { transform: 'translate(-50%, -120%)', opacity: 0 }, '100%': { transform: 'translate(-50%, 0)', opacity: 1 } },
+                        fadeIn: { '0%': { opacity: 0, transform: 'translateY(-6px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        slideUp: { '0%': { transform: 'translateY(100%)' }, '100%': { transform: 'translateY(0)' } },
+                        fillBar: { '0%': { width: '0%' } },
+                        pulseFast: { '0%, 100%': { opacity: 1 }, '50%': { opacity: .5 } }
                     }
                 }
             }
         }
     </script>
     <style>
-        :root {
-            --brand-500: 0 230 118;
-            --brand-600: 0 184 92;
-            --brand-glow: rgba(0, 230, 118, 0.4);
-            --brand-glow-strong: rgba(0, 230, 118, 0.7);
-        }
+        :root { --brand-500: 0 230 118; --brand-600: 0 184 92; --brand-glow: rgba(0, 230, 118, 0.4); --brand-glow-strong: rgba(0, 230, 118, 0.7); }
         
-        /* BLOQUEO ESTRÍCTO DE SCROLL HORIZONTAL */
-        html, body {
-            overflow-x: hidden !important;
-            width: 100%;
-            position: relative;
-            overscroll-behavior-x: none;
-            touch-action: pan-y;
+        html, body { 
+            overflow-x: hidden; 
+            width: 100%; 
+            position: relative; 
             -webkit-tap-highlight-color: transparent; 
             background-color: #050507; 
             color: #f3f3f6; 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
-
         .app-container { 
             max-width: 480px; 
             margin: 0 auto; 
             min-height: 100vh; 
-            width: 100%;
+            width: 100%; 
             background-color: #0a0a0c; 
             border-left: 1px solid #1e1e24; 
             border-right: 1px solid #1e1e24; 
             box-shadow: 0 0 50px rgba(0,0,0,0.9); 
             position: relative; 
-            overflow-x: hidden !important; 
+            overflow-x: hidden; 
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .bg-watermark {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            font-size: 140px;
-            color: rgba(255, 255, 255, 0.015);
-            pointer-events: none;
-            z-index: 0;
-            transform: rotate(-15deg);
-        }
-        
-        .glass-panel { 
-            background: rgba(22, 22, 28, 0.75); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
-        }
-        .glass-header { 
-            background: rgba(10, 10, 12, 0.85); 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px); 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06); 
-        }
+        .smooth-scroll { -webkit-overflow-scrolling: touch; }
+
+        .bg-watermark { position: absolute; bottom: 10px; right: 10px; font-size: 140px; color: rgba(255, 255, 255, 0.015); pointer-events: none; z-index: 0; transform: rotate(-15deg); }
+        .glass-panel { background: rgba(22, 22, 28, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .glass-header { background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
     </style>
 </head>
 <body class="antialiased">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useCallback } = React;
         
-        // ==========================================
-        // CONSTANTES Y HERRAMIENTAS GLOBALES
-        // ==========================================
         const CLIENTE_ID = 'Lautaro_Bravo'; 
-        const MAX_CLIENTES = null; // Ilimitado
-        const FECHA_VENCIMIENTO = null; // Infinito
+        const MAX_CLIENTES = null; 
+        const FECHA_VENCIMIENTO = null; 
 
         const SUPABASE_URL = 'https://pncnnvbdquzyvcnuethx.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_5WHz-KSuu5BaV08EGXJJmg_dkVOUJwy';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // MEJORA 4: Generador de IDs Seguro (UUID)
         const generateId = () => {
             if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
             return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
         };
 
-        // MEJORA 5: Clonación Profunda Optimizada
         const deepClone = (obj) => {
             if (typeof structuredClone === 'function') return structuredClone(obj);
             return JSON.parse(JSON.stringify(obj));
@@ -254,6 +203,7 @@
             try {
                 if (!audioCtx) unlockAudio();
                 if (!audioCtx) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
@@ -265,6 +215,47 @@
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + 0.6); 
             } catch(e) { console.log("Audio falló", e); }
+        };
+
+        // Tonos específicos para el Interval Timer (Beeps)
+        const playTone = (type = 'normal') => {
+            try {
+                if (!audioCtx) unlockAudio();
+                if (!audioCtx) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (type === 'tick') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'start') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Agudo
+                    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'rest') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime); // Grave
+                    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'done') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
+                    osc.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.0);
+                }
+            } catch(e) {}
         };
 
         function ExerciseCatalogModal({ onClose, onSelect }) {
@@ -303,7 +294,7 @@
                             {searchTerm && <button onClick={() => setSearchTerm('')} className="text-gray-500"><i className="fa-solid fa-xmark"></i></button>}
                         </div>
 
-                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1 smooth-scroll">
                             <button onClick={() => setMuscleFilter('')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${muscleFilter === '' ? 'bg-white text-black' : 'bg-dark-800 text-gray-300 border border-white/5'}`}>Todos</button>
                             {uniqueMuscles.map(m => (
                                 <button key={m} onClick={() => setMuscleFilter(m)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${muscleFilter === m ? 'bg-white text-black' : 'bg-dark-800 text-gray-300 border border-white/5'}`}>
@@ -313,7 +304,7 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-2 hide-scrollbar bg-dark-950">
+                    <div className="flex-1 overflow-y-auto px-4 py-2 hide-scrollbar smooth-scroll bg-dark-950">
                         <h3 className="text-white font-bold text-lg mb-4 mt-2">Ejercicios</h3>
                         <div className="space-y-1 pb-10">
                             {filteredExercises.map((ex, idx) => (
@@ -369,7 +360,6 @@
             const [localLink, setLocalLink] = useState(exercise.link || '');
             const [uploading, setUploading] = useState(false);
 
-            // MEJORA 1: Lógica de subida de video directa a Supabase
             const handleVideoUpload = async (file) => {
                 if (!file) return;
                 try {
@@ -403,7 +393,7 @@
 
             return (
                 <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={handleSave}>
-                    <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar" onClick={e => e.stopPropagation()}>
+                    <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative max-h-[90vh] overflow-y-auto smooth-scroll hide-scrollbar" onClick={e => e.stopPropagation()}>
                         <button onClick={handleSave} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                         
                         <div className="flex items-center gap-4 mb-5 pr-6">
@@ -423,17 +413,16 @@
                             
                             {isTeacher ? (
                                 <textarea 
-                                    className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none"
+                                    className="w-full bg-dark-900 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none whitespace-pre-wrap break-words smooth-scroll"
                                     rows="4"
                                     placeholder="Escribí acá la técnica, tips o postura requerida..."
                                     value={localDesc ?? ''}
                                     onChange={(e) => setLocalDesc(e.target.value)}
                                 />
                             ) : (
-                                <p className="text-gray-300 text-sm leading-relaxed">{exercise.description || 'Sin descripción detallada por el momento.'}</p>
+                                <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words">{exercise.description || 'Sin descripción detallada por el momento.'}</p>
                             )}
 
-                            {/* MEJORA 1: Interfaz de Subida y Reproductor de Video */}
                             {isTeacher ? (
                                 <div className="mt-2 border-t border-white/5 pt-3">
                                     <h4 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2"><i className="fa-solid fa-video text-brand-500 mr-1.5"></i> Video Demostrativo</h4>
@@ -492,7 +481,7 @@
             );
         }
 
-        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, onSaveToLibrary }) {
+        function ExerciseRow({ exercise, clientProgress, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
             const [localEx, setLocalEx] = useState(exercise);
             const [editWeek, setEditWeek] = useState(1); 
             const [showInfoModal, setShowInfoModal] = useState(false);
@@ -560,10 +549,10 @@
                             />
                         </div>
                         <div className="flex items-center gap-1">
-                            {!isFirst && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover arriba"><i className="fa-solid fa-arrow-up"></i></button>}
-                            {!isLast && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1" title="Mover abajo"><i className="fa-solid fa-arrow-down"></i></button>}
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1" title="Información"><i className="fa-solid fa-circle-info text-lg"></i></button>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1" title="Eliminar"><i className="fa-solid fa-trash-can"></i></button>
+                            {!isFirst && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1"><i className="fa-solid fa-arrow-up"></i></button>}
+                            {!isLast && <button type="button" onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-gray-400 hover:text-white transition-colors px-1.5 py-1"><i className="fa-solid fa-arrow-down"></i></button>}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }} className="text-brand-500 hover:text-white transition-colors px-1.5 py-1"><i className="fa-solid fa-circle-info text-lg"></i></button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-gray-500 hover:text-red-400 transition-colors px-1.5 py-1"><i className="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
 
@@ -580,22 +569,22 @@
                         <div className="flex gap-3 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
                             <div className="flex items-center gap-2 flex-1">
                                 <span className="text-xs text-gray-400">Sets:</span>
-                                <input className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
+                                <input type="tel" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
                             </div>
                             <div className="flex items-center gap-2 flex-1">
                                 <span className="text-xs text-gray-400">Reps:</span>
-                                <input className="w-14 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
+                                <input type="tel" className="w-14 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
                             </div>
                             <div className="flex items-center gap-2 flex-[0.8]">
                                 <span className="text-xs text-gray-400">RIR:</span>
-                                <input className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.rir ?? localEx.rir ?? '2'} onChange={(e) => handleWeekConfigChange(editWeek, 'rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
+                                <input type="tel" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.rir ?? localEx.rir ?? '2'} onChange={(e) => handleWeekConfigChange(editWeek, 'rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
                             </div>
                         </div>
                     </div>
 
                     <div className="flex gap-4 text-sm text-gray-400 items-center py-1">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold uppercase tracking-wider">Descanso general:</span> <i className="fa-regular fa-clock text-brand-500"></i> <input className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Descanso general:</span> <i className="fa-regular fa-clock text-brand-500"></i> <input type="tel" className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
                         </div>
                     </div>
                     
@@ -610,7 +599,7 @@
 
                     <div className="mt-3">
                         <textarea 
-                            className="w-full bg-dark-900/80 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none box-border"
+                            className="w-full bg-dark-900/80 text-gray-200 p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none box-border whitespace-pre-wrap break-words smooth-scroll"
                             rows="2"
                             placeholder="Aclaraciones o notas rápida para la sesión..."
                             value={localEx.coachNote ?? ''}
@@ -623,7 +612,7 @@
                         <div className="mt-3 bg-brand-500/10 p-3 rounded-xl border border-brand-500/30">
                             <span className="text-brand-500 text-xs font-bold flex items-center gap-2 mb-2"><i className="fa-solid fa-comment-dots"></i> Feedback del alumno:</span>
                             {exerciseNotes.map(en => (
-                                <div key={en.week} className="text-xs text-gray-300 mb-1 last:mb-0"><strong className="text-brand-500">Semana {en.week}:</strong> {en.note}</div>
+                                <div key={en.week} className="text-xs text-gray-300 mb-1 last:mb-0"><strong className="text-brand-500">Semana {en.week}:</strong> <span className="whitespace-pre-wrap break-words">{en.note}</span></div>
                             ))}
                         </div>
                     )}
@@ -784,7 +773,7 @@
                     {exercise.coachNote && (
                         <div className="bg-dark-800/90 border-l-4 border-brand-500 p-3 rounded-r-xl mb-4 flex gap-3 items-start shadow-inner">
                             <i className="fa-solid fa-circle-info text-brand-500 mt-0.5"></i>
-                            <p className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">{exercise.coachNote}</p>
+                            <p className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed">{exercise.coachNote}</p>
                         </div>
                     )}
 
@@ -804,7 +793,7 @@
                                 onChange={handleNoteChange} 
                                 onBlur={handleNoteBlur}
                                 placeholder="Anotá acá sensaciones, carga de máquina, etc..." 
-                                className="w-full bg-dark-800 text-white p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none h-24 shadow-inner box-border block"
+                                className="w-full bg-dark-800 text-white p-3 rounded-xl outline-none border border-dark-600 focus:border-brand-500 text-sm resize-none h-24 shadow-inner box-border block whitespace-pre-wrap break-words smooth-scroll"
                             />
                         </div>
                     )}
@@ -873,7 +862,7 @@
                                 <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600 focus-within:border-brand-500 overflow-hidden shadow-inner w-full">
                                     <button type="button" onClick={(e) => adjustWeight(e, i, -2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center shrink-0">-</button>
                                     <input 
-                                        type="text" 
+                                        type="tel" 
                                         inputMode="decimal"
                                         className="w-full bg-transparent py-2.5 text-white outline-none text-center font-bold text-sm" 
                                         placeholder="-" 
@@ -885,7 +874,7 @@
                                 </div>
                                 
                                 <input 
-                                    type="text" 
+                                    type="tel" 
                                     className="w-full bg-dark-800 rounded-xl py-2.5 text-white outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
                                     placeholder="-" 
                                     value={set.reps ?? ''} 
@@ -894,7 +883,7 @@
                                 />
 
                                 <input 
-                                    type="text" 
+                                    type="tel" 
                                     className="w-full bg-dark-800 rounded-xl py-2.5 text-brand-500 outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
                                     placeholder="RIR" 
                                     value={set.rir ?? ''} 
@@ -920,6 +909,162 @@
             );
         }
 
+        function ConfigRow({ icon, label, field, step, value, onAdjust }) {
+            return (
+                <div className="flex items-center justify-between border-b border-dark-700 py-4">
+                    <div className="w-12 text-center text-brand-500 text-xl"><i className={`fa-solid ${icon}`}></i></div>
+                    <div className="flex-1">
+                        <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px] text-center mb-1">{label}</p>
+                        <div className="flex justify-center items-center gap-6">
+                            <button onClick={()=>onAdjust(field, -step)} className="w-10 h-10 rounded-full bg-dark-800 text-brand-500 border border-brand-500/30 flex items-center justify-center font-black text-xl hover:bg-brand-500 hover:text-white transition-colors">-</button>
+                            <span className="text-2xl font-black text-white w-14 text-center">{value}</span>
+                            <button onClick={()=>onAdjust(field, step)} className="w-10 h-10 rounded-full bg-dark-800 text-brand-500 border border-brand-500/30 flex items-center justify-center font-black text-xl hover:bg-brand-500 hover:text-white transition-colors">+</button>
+                        </div>
+                    </div>
+                    <div className="w-12"></div>
+                </div>
+            );
+        }
+
+        function IntervalTimer() {
+            const [config, setConfig] = useState({ prepare: 10, work: 20, rest: 10, cycles: 8, sets: 1 });
+            const [status, setStatus] = useState('idle'); // idle, running, paused
+            const [phase, setPhase] = useState(''); // prepare, work, rest
+            const [timeLeft, setTimeLeft] = useState(0);
+            const [currentCycle, setCurrentCycle] = useState(1);
+            const [currentSet, setCurrentSet] = useState(1);
+            
+            const timerRef = useRef(null);
+
+            const adjust = (field, delta) => {
+                setConfig(prev => ({ ...prev, [field]: Math.max(1, prev[field] + delta) }));
+            };
+
+            const startTimer = () => {
+                unlockAudio();
+                setStatus('running');
+                setPhase('prepare');
+                setTimeLeft(config.prepare);
+                setCurrentCycle(1);
+                setCurrentSet(1);
+                playTone('tick');
+            };
+            
+            const pauseTimer = () => setStatus('paused');
+            const resumeTimer = () => { unlockAudio(); setStatus('running'); };
+            const stopTimer = () => { setStatus('idle'); clearInterval(timerRef.current); };
+
+            useEffect(() => {
+                let wakeLock = null;
+                const requestWakeLock = async () => {
+                    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+                };
+                if (status === 'running') requestWakeLock();
+                return () => { if (wakeLock) wakeLock.release().catch(()=>{}); };
+            }, [status]);
+
+            useEffect(() => {
+                if (status === 'running') {
+                    timerRef.current = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev > 1) {
+                                if (prev <= 4) playTone('tick'); 
+                                return prev - 1;
+                            }
+                            handlePhaseTransition();
+                            return 0; 
+                        });
+                    }, 1000);
+                } else {
+                    clearInterval(timerRef.current);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [status, phase, currentCycle, currentSet, config]);
+
+            const handlePhaseTransition = () => {
+                if (phase === 'prepare') {
+                    playTone('start');
+                    setPhase('work');
+                    setTimeLeft(config.work);
+                } else if (phase === 'work') {
+                    if (currentCycle < config.cycles) {
+                        playTone('rest');
+                        setPhase('rest');
+                        setTimeLeft(config.rest);
+                    } else if (currentSet < config.sets) {
+                        playTone('rest');
+                        setPhase('rest'); 
+                        setTimeLeft(config.rest); 
+                    } else {
+                        playTone('done');
+                        setStatus('idle');
+                    }
+                } else if (phase === 'rest') {
+                    playTone('start');
+                    if (currentCycle < config.cycles) {
+                        setCurrentCycle(c => c + 1);
+                    } else {
+                        setCurrentCycle(1);
+                        setCurrentSet(s => s + 1);
+                    }
+                    setPhase('work');
+                    setTimeLeft(config.work);
+                }
+            };
+
+            const formatSecs = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+            
+            const totalTime = config.prepare + (config.work * config.cycles + config.rest * (config.cycles - 1)) * config.sets + config.rest * (config.sets - 1);
+            const totalIntervals = config.cycles * config.sets;
+
+            if (status !== 'idle') {
+                const phaseColors = { prepare: 'text-yellow-400', work: 'text-brand-500', rest: 'text-blue-400' };
+                const phaseLabels = { prepare: 'Preparación', work: '¡A TRABAJAR!', rest: 'Descanso' };
+
+                return (
+                    <div className="flex flex-col items-center justify-center h-[70vh] p-6 animate-fade-in relative z-20">
+                        <h2 className="text-gray-400 font-bold uppercase tracking-widest mb-4 border border-white/10 px-4 py-1.5 rounded-full bg-dark-800">
+                            Ciclo {currentCycle}/{config.cycles} • Serie {currentSet}/{config.sets}
+                        </h2>
+                        <h1 className={`text-3xl font-black uppercase tracking-tighter mb-8 ${phaseColors[phase]} animate-pulse`}>
+                            {phaseLabels[phase]}
+                        </h1>
+                        <div className="text-[6rem] font-black text-white leading-none tracking-tighter tabular-nums drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] mb-12">
+                            {formatSecs(timeLeft)}
+                        </div>
+                        <div className="flex gap-4 w-full">
+                            {status === 'running' ? (
+                                <button onClick={pauseTimer} className="flex-1 bg-dark-800 text-yellow-500 border border-yellow-500/30 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2"><i className="fa-solid fa-pause"></i> Pausar</button>
+                            ) : (
+                                <button onClick={resumeTimer} className="flex-1 bg-brand-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2"><i className="fa-solid fa-play"></i> Reanudar</button>
+                            )}
+                            <button onClick={stopTimer} className="w-16 bg-dark-800 text-red-500 border border-red-500/30 rounded-2xl flex items-center justify-center"><i className="fa-solid fa-stop text-xl"></i></button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="p-5 flex flex-col items-center pb-24">
+                    <div className="w-full bg-brand-500/10 border border-brand-500/30 text-brand-500 text-center py-3 rounded-xl font-bold text-sm mb-4 flex justify-center items-center gap-2">
+                        <span><i className="fa-solid fa-clock"></i> {formatSecs(totalTime)}</span> <span className="opacity-50">•</span> <span>{totalIntervals} Intervalos</span>
+                    </div>
+
+                    <div className="w-full bg-dark-800/50 rounded-3xl p-2 border border-white/5 shadow-inner mb-6">
+                        <ConfigRow icon="fa-person-walking" label="Preparación" field="prepare" step={1} value={config.prepare} onAdjust={adjust} />
+                        <ConfigRow icon="fa-dumbbell" label="Trabajo" field="work" step={1} value={config.work} onAdjust={adjust} />
+                        <ConfigRow icon="fa-bed" label="Descanso" field="rest" step={1} value={config.rest} onAdjust={adjust} />
+                        <ConfigRow icon="fa-repeat" label="Ciclos" field="cycles" step={1} value={config.cycles} onAdjust={adjust} />
+                        <ConfigRow icon="fa-layer-group" label="Series" field="sets" step={1} value={config.sets} onAdjust={adjust} />
+                    </div>
+
+                    <button onClick={startTimer} className="w-full bg-brand-500 text-white font-black text-base uppercase tracking-widest py-4 rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center gap-3 transition-transform active:scale-95">
+                        <i className="fa-solid fa-play"></i> EMPEZAR
+                    </button>
+                </div>
+            );
+        }
+
         function App() {
             const [isLicenseValid, setIsLicenseValid] = useState(true);
             const [globalData, setGlobalData] = useState(null);
@@ -933,9 +1078,9 @@
             
             const [activeWeek, setActiveWeek] = useState(1); 
             
-            // MEJORA 2: ESTADOS DEL CRONÓMETRO PERSISTENTE
             const [isTrainingStarted, setIsTrainingStarted] = useState(false);
             const [trainingTime, setTrainingTime] = useState(0);
+            const [workoutSummary, setWorkoutSummary] = useState(null);
             
             const [restTime, setRestTime] = useState(0); 
             const [restTimerKey, setRestTimerKey] = useState(0); 
@@ -968,7 +1113,7 @@
                 
                 setGlobalData(prev => {
                     if (!prev) return prev;
-                    const cloned = deepClone(prev); // MEJORA 5: Clonación Profunda Optimizada
+                    const cloned = deepClone(prev);
                     mutationCallback(cloned);
                     pendingDataRef.current = cloned; 
                     return cloned;
@@ -1080,7 +1225,6 @@
                 return () => { supabase.removeChannel(channel); };
             }, [isLicenseValid]);
 
-            // MEJORA 2: LÓGICA DE CRONÓMETRO GLOBAL PERSISTENTE Y ANTI-RECARGAS
             useEffect(() => {
                 let interval = null;
                 if (isTrainingStarted) {
@@ -1095,7 +1239,7 @@
                         setTrainingTime(Math.floor((now - startTime) / 1000));
                     };
                     
-                    updateTimer(); // Llamada inicial
+                    updateTimer(); 
                     interval = setInterval(updateTimer, 1000);
                 } else { 
                     clearInterval(interval); 
@@ -1104,12 +1248,10 @@
                 return () => clearInterval(interval);
             }, [isTrainingStarted]);
 
-            // MANEJO DE HISTORY API PARA BLOQUEAR EL GESTO/BOTÓN DE ATRÁS EN ENTRENAMIENTO
             useEffect(() => {
                 const handlePopState = (e) => {
                     if (view === 'cliente_entrenamiento' && isTrainingStarted) {
                         if (!window.confirm("¿Seguro que querés salir del entrenamiento en curso? Perderás el cronómetro.")) {
-                            // Si cancela, volvemos a empujar el estado para mantener la trampa
                             window.history.pushState(null, '', window.location.href);
                         } else {
                             setIsTrainingStarted(false);
@@ -1277,7 +1419,6 @@
                                 if (client) {
                                     setCurrentUser(client);
                                     
-                                    // RECUPERAR SESIÓN SI HABÍA UN CRONÓMETRO CORRIENDO
                                     if (localStorage.getItem(`bravo_timer_start_${CLIENTE_ID}`)) {
                                         setIsTrainingStarted(true);
                                         setView('cliente_entrenamiento');
@@ -1634,6 +1775,37 @@
                 <div className="relative" style={appStyleVars}>
                     {view !== 'home' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
 
+                    {/* MODAL DE COMPARTIR LOGRO */}
+                    {workoutSummary && (
+                        <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-dark-900 border border-brand-500/30 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center">
+                                <button onClick={() => setWorkoutSummary(null)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                
+                                <div className="w-20 h-20 bg-brand-500/20 rounded-full flex items-center justify-center text-brand-500 text-4xl mx-auto mb-4 shadow-[0_0_30px_var(--brand-glow)]">
+                                    <i className="fa-solid fa-trophy"></i>
+                                </div>
+                                <h3 className="text-white font-black text-2xl mb-2 uppercase tracking-tighter leading-tight">¡Entrenamiento<br/>Completado!</h3>
+                                <p className="text-gray-400 text-sm mb-6">Tiempo de sesión: <strong className="text-brand-500">{workoutSummary.time}</strong></p>
+                                
+                                <button onClick={() => {
+                                    const appName = globalData?.appTitle1 ? `${globalData.appTitle1} ${globalData.appTitle2 || ''}` : 'Bravo Training';
+                                    const shareText = `🔥 Acabo de destruir mi entrenamiento en ${appName}!\n⏱️ Tiempo: ${workoutSummary.time}\n🏆 Semana ${workoutSummary.week} completada.\n¡A seguir sumando! 💪`;
+                                    
+                                    if (navigator.share) {
+                                        navigator.share({ title: 'Entrenamiento Completado', text: shareText }).catch(()=>{});
+                                    } else {
+                                        navigator.clipboard.writeText(shareText);
+                                        showToast('¡Texto copiado para compartir!');
+                                    }
+                                }} className="w-full bg-brand-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 shadow-lg shadow-brand-500/30 uppercase tracking-widest transition-transform active:scale-95 mb-4">
+                                    <i className="fa-brands fa-instagram text-xl"></i> Compartir Logro
+                                </button>
+                                
+                                <button onClick={() => setWorkoutSummary(null)} className="text-gray-500 text-xs font-bold uppercase hover:text-white tracking-widest">Cerrar</button>
+                            </div>
+                        </div>
+                    )}
+
                     {catalogTarget && (
                         <ExerciseCatalogModal 
                             onClose={() => setCatalogTarget(null)} 
@@ -1643,11 +1815,11 @@
 
                     {showClientProgressModal && activeClient && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowClientProgressModal(false)}>
-                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[85vh] smooth-scroll" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setShowClientProgressModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 <h3 className="text-white font-bold text-lg mb-2"><i className="fa-solid fa-chart-line text-brand-500"></i> Progreso de {activeClient.name}</h3>
                                 
-                                <div className="overflow-y-auto hide-scrollbar flex-1 pb-4">
+                                <div className="overflow-y-auto hide-scrollbar smooth-scroll flex-1 pb-4">
                                     <p className="text-xs text-gray-400 mb-4">Volumen de carga (Tonelaje) por semana</p>
                                     <div className="space-y-4">
                                         {[1, 2, 3, 4].map(w => {
@@ -1694,11 +1866,11 @@
 
                     {showLibraryModal && (
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowLibraryModal(false)}>
-                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                            <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-md shadow-2xl relative flex flex-col max-h-[80vh] smooth-scroll" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setShowLibraryModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 <h3 className="text-white font-bold text-lg mb-4"><i className="fa-solid fa-book-bookmark text-brand-500"></i> Librería de Plantillas</h3>
                                 
-                                <div className="overflow-y-auto hide-scrollbar space-y-3 flex-1">
+                                <div className="overflow-y-auto hide-scrollbar smooth-scroll space-y-3 flex-1">
                                     {(!globalData.library || globalData.library.length === 0) ? (
                                         <p className="text-gray-500 text-sm text-center py-6">La librería está vacía. Guardá una plantilla usando el icono del marcador.</p>
                                     ) : (
@@ -1724,7 +1896,7 @@
                         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setTransferTarget(null)}>
                             <div className="bg-dark-900 border border-brand-500/30 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
                                 <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><i className="fa-solid fa-share-nodes text-brand-500"></i> Transferir plantilla a...</h3>
-                                <div className="space-y-2 max-h-60 overflow-y-auto hide-scrollbar">
+                                <div className="space-y-2 max-h-60 overflow-y-auto hide-scrollbar smooth-scroll">
                                     {globalData.clients.filter(c => c.id !== transferTarget.sourceClientId).map(c => (
                                         <button key={c.id} onClick={() => { transferDayToClient(transferTarget.sourceClientId, c.id, transferTarget.dayId); setTransferTarget(null); }} className="w-full text-left bg-dark-800 p-4 rounded-xl border border-white/5 hover:border-brand-500 text-white font-medium transition-colors flex items-center justify-between group">
                                             {c.name} <i className="fa-solid fa-arrow-right text-gray-500 group-hover:text-brand-500"></i>
@@ -1982,7 +2154,7 @@
                                             <div className="border-t border-dark-700 pt-3">
                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aviso Global para Alumnos</label>
                                                 <textarea 
-                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600 resize-none"
+                                                    className="w-full bg-dark-900/50 p-2.5 rounded-xl text-white outline-none border border-dark-600 focus:border-brand-500 text-sm mt-1 placeholder-gray-600 resize-none whitespace-pre-wrap break-words smooth-scroll"
                                                     rows="2"
                                                     defaultValue={globalData.globalAnnouncement || ''}
                                                     onBlur={(e) => updateAppSetting('globalAnnouncement', e.target.value)}
@@ -2013,7 +2185,7 @@
                                             </div>
                                         </div>
 
-                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-2">Listado de Alumnos</h3>
+                                        <h3 className="font-black text-xs text-gray-400 uppercase tracking-widest mb-2 mt-4">Listado de Alumnos</h3>
                                         
                                         {globalData.clients?.length === 0 && (
                                             <div className="text-center text-gray-500 text-sm py-10">Aún no hay alumnos creados.</div>
@@ -2061,7 +2233,7 @@
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-brand-500 text-sm mb-1 uppercase tracking-wider">Aviso del Entrenador</h3>
-                                            <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-wrap">{globalData.globalAnnouncement}</p>
+                                            <p className="text-gray-300 text-xs leading-relaxed whitespace-pre-wrap break-words">{globalData.globalAnnouncement}</p>
                                         </div>
                                     </div>
                                 )}
@@ -2151,6 +2323,17 @@
                                     <p className="text-xs text-gray-300">Asegurate de tildar (<i className="fa-solid fa-check mx-1"></i>) todas tus series durante el entrenamiento para que el progreso se calcule correctamente.</p>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {view === 'cliente_timer' && (
+                        <div className="app-container pb-24 relative z-10 bg-dark-900 animate-fade-in">
+                            <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-30 border-b border-white/5">
+                                <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
+                                    <i className="fa-solid fa-stopwatch text-brand-500 text-lg"></i> Cronómetro de Intervalos
+                                </h1>
+                            </header>
+                            <IntervalTimer />
                         </div>
                     )}
 
@@ -2271,25 +2454,27 @@
                         </div>
                     )}
 
-                    {/* BARRA DE NAVEGACIÓN INFERIOR (ALUMNO) */}
                     {view.startsWith('cliente_') && view !== 'cliente_entrenamiento' && (
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 pb-5 z-20">
-                            <button onClick={() => setView('cliente_listado')} className={`${view === 'cliente_listado' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[480px] bg-dark-900/95 backdrop-blur border-t border-white/5 flex justify-around p-3 pb-5 z-40">
+                            <button onClick={() => setView('cliente_listado')} className={`${view === 'cliente_listado' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-[22%]`}>
                                 <i className="fa-solid fa-dumbbell text-lg"></i>
                                 <span className="text-[9px] font-black uppercase tracking-wider">Entrenar</span>
                             </button>
-                            <button onClick={() => setView('cliente_progreso')} className={`${view === 'cliente_progreso' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                            <button onClick={() => setView('cliente_progreso')} className={`${view === 'cliente_progreso' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-[22%]`}>
                                 <i className="fa-solid fa-chart-line text-lg"></i>
                                 <span className="text-[9px] font-black uppercase tracking-wider">Progreso</span>
                             </button>
-                            <button onClick={() => setView('cliente_perfil')} className={`${view === 'cliente_perfil' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-16`}>
+                            <button onClick={() => setView('cliente_timer')} className={`${view === 'cliente_timer' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-[22%]`}>
+                                <i className="fa-solid fa-stopwatch text-lg"></i>
+                                <span className="text-[9px] font-black uppercase tracking-wider">Timer</span>
+                            </button>
+                            <button onClick={() => setView('cliente_perfil')} className={`${view === 'cliente_perfil' ? 'text-brand-500' : 'text-gray-400 hover:text-gray-200'} transition-colors flex flex-col items-center gap-1.5 w-[22%]`}>
                                 <i className="fa-regular fa-user text-lg"></i>
                                 <span className="text-[9px] font-black uppercase tracking-wider">Perfil</span>
                             </button>
                         </div>
                     )}
 
-                    {/* VISTA: ENTRENAMIENTO EN CURSO */}
                     {view === 'cliente_entrenamiento' && (
                         !isTrainingStarted ? (
                             <div className="app-container pb-24 relative z-10 bg-dark-900">
@@ -2364,7 +2549,8 @@
                                     <button onClick={() => { 
                                         if (window.confirm("¿Estás seguro que querés FINALIZAR el entrenamiento de hoy?")) {
                                             setIsTrainingStarted(false); 
-                                            showToast(`¡Entrenamiento finalizado! Tiempo: ${formatTime(trainingTime)}`); 
+                                            // Activar pantalla de compartir
+                                            setWorkoutSummary({ time: formatTime(trainingTime), week: activeWeek });
                                             setView('cliente_listado'); 
                                         }
                                     }} className="bg-dark-800 text-brand-500 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border border-white/5 hover:bg-dark-700 transition-colors">Terminar</button>
@@ -2408,7 +2594,6 @@
                                     })()}
                                 </div>
 
-                                {/* MEJORA 3: BOTONES DE DESCANSO (+10s / -10s) */}
                                 {restTime > 0 && (
                                     <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-brand-500 text-white px-5 py-3 rounded-2xl font-black text-sm tracking-wider shadow-[0_0_25px_var(--brand-glow-strong)] flex items-center gap-3 z-50 uppercase border border-white/20 w-max">
                                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setRestTime(0)}>
@@ -2425,7 +2610,6 @@
                         )
                     )}
 
-                    {/* BANNER FLOTANTE DEL CRONÓMETRO GLOBAL CUANDO SE NAVEGA FUERA */}
                     {isTrainingStarted && view !== 'cliente_entrenamiento' && view.startsWith('cliente_') && (
                         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[400px] bg-dark-800 border border-brand-500/50 p-4 rounded-2xl shadow-[0_10px_30px_var(--brand-glow)] flex items-center justify-between z-[150] cursor-pointer" onClick={() => setView('cliente_entrenamiento')}>
                             <div className="flex items-center gap-3">
