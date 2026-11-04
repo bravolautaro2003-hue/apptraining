@@ -926,10 +926,10 @@
             );
         }
 
-        function IntervalTimer() {
+                function IntervalTimer() {
             const [config, setConfig] = useState({ prepare: 10, work: 20, rest: 10, cycles: 8, sets: 1 });
-            const [status, setStatus] = useState('idle'); // idle, running, paused
-            const [phase, setPhase] = useState(''); // prepare, work, rest
+            const [status, setStatus] = useState('idle'); 
+            const [phase, setPhase] = useState('prepare'); 
             const [timeLeft, setTimeLeft] = useState(0);
             const [currentCycle, setCurrentCycle] = useState(1);
             const [currentSet, setCurrentSet] = useState(1);
@@ -947,12 +947,12 @@
                 setTimeLeft(config.prepare);
                 setCurrentCycle(1);
                 setCurrentSet(1);
-                playTone('tick');
+                playTone('start');
             };
             
             const pauseTimer = () => setStatus('paused');
             const resumeTimer = () => { unlockAudio(); setStatus('running'); };
-            const stopTimer = () => { setStatus('idle'); clearInterval(timerRef.current); };
+            const stopTimer = () => { setStatus('idle'); if(timerRef.current) clearInterval(timerRef.current); };
 
             useEffect(() => {
                 let wakeLock = null;
@@ -963,25 +963,8 @@
                 return () => { if (wakeLock) wakeLock.release().catch(()=>{}); };
             }, [status]);
 
-            useEffect(() => {
-                if (status === 'running') {
-                    timerRef.current = setInterval(() => {
-                        setTimeLeft(prev => {
-                            if (prev > 1) {
-                                if (prev <= 4) playTone('tick'); 
-                                return prev - 1;
-                            }
-                            handlePhaseTransition();
-                            return 0; 
-                        });
-                    }, 1000);
-                } else {
-                    clearInterval(timerRef.current);
-                }
-                return () => clearInterval(timerRef.current);
-            }, [status, phase, currentCycle, currentSet, config]);
-
-            const handlePhaseTransition = () => {
+            // Esta es la función clave que soluciona el bucle del useEffect
+            const transitionNext = useCallback(() => {
                 if (phase === 'prepare') {
                     playTone('start');
                     setPhase('work');
@@ -1010,10 +993,27 @@
                     setPhase('work');
                     setTimeLeft(config.work);
                 }
-            };
+            }, [phase, currentCycle, currentSet, config]);
+
+            useEffect(() => {
+                if (status === 'running') {
+                    timerRef.current = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev > 1) {
+                                if (prev <= 4) playTone('tick');
+                                return prev - 1;
+                            }
+                            transitionNext();
+                            return 0;
+                        });
+                    }, 1000);
+                } else {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                }
+                return () => { if (timerRef.current) clearInterval(timerRef.current); };
+            }, [status, transitionNext]);
 
             const formatSecs = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-            
             const totalTime = config.prepare + (config.work * config.cycles + config.rest * (config.cycles - 1)) * config.sets + config.rest * (config.sets - 1);
             const totalIntervals = config.cycles * config.sets;
 
