@@ -17,6 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.13/babel.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+    <!-- Librería añadida para generar la imagen de la tarjeta directamente -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
@@ -1799,56 +1801,108 @@
                 <div className="relative" style={appStyleVars}>
                     {view !== 'home' && <div className="bg-watermark"><i className="fa-solid fa-dumbbell"></i></div>}
 
-                    {/* MODAL DE COMPARTIR LOGRO (DISEÑO INSTAGRAM) */}
+                    {/* MODAL DE COMPARTIR LOGRO (DISEÑO INSTAGRAM CON EXPORTACIÓN DE IMAGEN) */}
                     {workoutSummary && (
                         <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
-                            <div id="ig-share-card" className="bg-gradient-to-br from-dark-900 to-dark-950 border border-brand-500/30 p-8 rounded-[2.5rem] w-full max-w-sm shadow-[0_0_50px_var(--brand-glow)] relative text-center mb-8 overflow-hidden">
+                            <div id="ig-share-card" className="bg-gradient-to-br from-dark-900 to-dark-950 border border-brand-500/30 p-8 rounded-[2.5rem] w-full max-w-sm shadow-[0_0_50px_var(--brand-glow)] relative text-center mb-6 overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-full bg-watermark opacity-10 pointer-events-none"><i className="fa-solid fa-dumbbell"></i></div>
                                 
-                                <div className="w-24 h-24 mx-auto mb-4 relative z-10">
+                                <div className="w-20 h-20 mx-auto mb-4 relative z-10">
                                     {currentUser?.avatar ? (
-                                        <img src={currentUser.avatar} alt="Perfil" className="w-full h-full object-cover rounded-full border-2 border-brand-500 shadow-[0_0_20px_var(--brand-glow)]" />
+                                        <img src={currentUser.avatar} alt="Perfil" crossOrigin="anonymous" className="w-full h-full object-cover rounded-full border-2 border-brand-500 shadow-[0_0_20px_var(--brand-glow)]" />
                                     ) : (
-                                        <div className="w-full h-full bg-brand-500/20 rounded-full flex items-center justify-center text-brand-500 text-4xl shadow-[0_0_20px_var(--brand-glow)]">
-                                            <i className="fa-solid fa-trophy"></i>
+                                        <div className="w-full h-full bg-brand-500/20 rounded-full flex items-center justify-center text-brand-500 text-3xl shadow-[0_0_20px_var(--brand-glow)]">
+                                            <i className="fa-solid fa-bolt"></i>
                                         </div>
                                     )}
                                 </div>
                                 
-                                <h3 className="text-white font-black text-3xl mb-1 uppercase tracking-tighter leading-tight relative z-10">Rutina<br/>Destruida</h3>
-                                <p className="text-brand-500 font-black text-sm tracking-widest uppercase mb-6 relative z-10">{currentUser?.name}</p>
+                                <h3 className="text-white font-black text-2xl mb-1 uppercase tracking-tighter leading-tight relative z-10">Sesión<br/>Completada</h3>
+                                <p className="text-brand-500 font-black text-xs tracking-widest uppercase mb-5 relative z-10">{currentUser?.name}</p>
                                 
-                                <div className="bg-dark-800/80 backdrop-blur-sm rounded-2xl p-4 border border-white/5 relative z-10 flex justify-around">
+                                <div className="bg-dark-800/90 rounded-2xl p-4 border border-white/5 relative z-10 flex justify-around mb-4 shadow-inner">
                                     <div>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Tiempo</p>
-                                        <p className="text-2xl font-black text-white">{workoutSummary.time}</p>
+                                        <p className="text-xl font-black text-white">{workoutSummary.time}</p>
                                     </div>
                                     <div className="w-px bg-white/10"></div>
                                     <div>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Semana</p>
-                                        <p className="text-2xl font-black text-white">{workoutSummary.week}</p>
+                                        <p className="text-xl font-black text-white">{workoutSummary.week}</p>
                                     </div>
                                 </div>
+
+                                {workoutSummary.exercises && workoutSummary.exercises.length > 0 && (
+                                    <div className="text-left bg-dark-800/60 rounded-2xl p-4 border border-white/5 relative z-10 shadow-inner mb-2">
+                                        <p className="text-[9px] text-gray-500 font-black tracking-widest uppercase mb-3 text-center border-b border-white/10 pb-2">{workoutSummary.dayName || 'Rutina'}</p>
+                                        <ul className="text-xs text-gray-300 font-medium space-y-2">
+                                            {workoutSummary.exercises.slice(0, 5).map((ex, i) => (
+                                                <li key={i} className="truncate flex items-center gap-2"><i className="fa-solid fa-check text-brand-500 text-[10px]"></i> {ex}</li>
+                                            ))}
+                                            {workoutSummary.exercises.length > 5 && (
+                                                <li className="text-brand-500 italic text-[10px] pt-1 text-center font-bold">+{workoutSummary.exercises.length - 5} ejercicios más</li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                )}
                                 
-                                <div className="mt-6 relative z-10">
+                                <div className="mt-5 relative z-10">
                                     <span className="text-[9px] text-gray-500 font-black tracking-widest uppercase">{globalData?.appTitle1} {globalData?.appTitle2}</span>
                                 </div>
                             </div>
 
                             <div className="flex flex-col gap-3 w-full max-w-sm">
+                                <button onClick={async () => {
+                                    const card = document.getElementById('ig-share-card');
+                                    if (!card) return;
+                                    showToast('Generando imagen para compartir...', 'info');
+                                    
+                                    try {
+                                        const canvas = await window.html2canvas(card, { 
+                                            backgroundColor: '#0a0a0c', 
+                                            scale: 3, 
+                                            useCORS: true 
+                                        });
+                                        
+                                        canvas.toBlob(async (blob) => {
+                                            if (!blob) return;
+                                            const file = new File([blob], 'entrenamiento.png', { type: 'image/png' });
+                                            
+                                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                                                await navigator.share({
+                                                    files: [file],
+                                                    title: 'Entrenamiento Completado',
+                                                }).catch(()=> showToast('Compartido cancelado', 'info'));
+                                            } else {
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = 'entrenamiento.png';
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                                showToast('Imagen guardada en tu galería.');
+                                            }
+                                        }, 'image/png');
+                                    } catch (err) {
+                                        showToast('Error al generar la imagen', 'error');
+                                    }
+                                }} className="w-full bg-brand-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 shadow-lg shadow-brand-500/30 uppercase tracking-widest transition-transform active:scale-95">
+                                    <i className="fa-brands fa-instagram text-xl"></i> Compartir como Imagen
+                                </button>
+                                
                                 <button onClick={() => {
-                                    const shareText = `🔥 Acabo de destruir mi entrenamiento!\n⏱️ Tiempo: ${workoutSummary.time}\n🏆 Semana ${workoutSummary.week}\n¡A seguir sumando! 💪`;
+                                    const shareText = `🔥 Acabo de completar mi sesión: ${workoutSummary.dayName || ''}\n⏱️ Tiempo: ${workoutSummary.time}\n🏆 Semana ${workoutSummary.week}\n¡A seguir sumando! 💪`;
                                     if (navigator.share) {
                                         navigator.share({ title: 'Entrenamiento Completado', text: shareText }).catch(()=>{});
                                     } else {
                                         navigator.clipboard.writeText(shareText);
                                         showToast('¡Texto copiado!');
                                     }
-                                }} className="w-full bg-brand-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-600 shadow-lg shadow-brand-500/30 uppercase tracking-widest transition-transform active:scale-95">
-                                    <i className="fa-solid fa-share-nodes text-xl"></i> Compartir Texto/Link
+                                }} className="w-full bg-dark-800 text-gray-300 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:text-white transition-colors uppercase tracking-widest text-xs border border-white/5">
+                                    <i className="fa-regular fa-copy"></i> Compartir Texto Simple
                                 </button>
-                                <p className="text-center text-xs text-gray-400 mb-2 font-medium">💡 Tip: Hacé captura de pantalla a la tarjeta para subirla a tu Historia de Instagram.</p>
-                                <button onClick={() => setWorkoutSummary(null)} className="w-full bg-dark-800 text-gray-400 font-bold py-4 rounded-2xl hover:text-white transition-colors uppercase tracking-widest text-sm border border-white/5">Cerrar</button>
+                                
+                                <button onClick={() => setWorkoutSummary(null)} className="w-full text-gray-500 font-bold py-3 hover:text-white transition-colors uppercase tracking-widest text-xs">Cerrar</button>
                             </div>
                         </div>
                     )}
@@ -2613,8 +2667,18 @@
                                     <button onClick={() => { 
                                         if (window.confirm("¿Estás seguro que querés FINALIZAR el entrenamiento de hoy?")) {
                                             setIsTrainingStarted(false); 
-                                            // Activar pantalla de compartir
-                                            setWorkoutSummary({ time: formatTime(trainingTime), week: activeWeek });
+                                            // NUEVA FUNCIÓN: Mapear los ejercicios realizados para la tarjeta final
+                                            const day = globalData.routines[currentUser.id]?.find(d => d.id === activeDayId) || {};
+                                            const exercisesDone = [];
+                                            (day.sections || [{exercises: day.exercises || []}]).forEach(sec => {
+                                                (sec.exercises || []).forEach(ex => exercisesDone.push(ex.name));
+                                            });
+                                            setWorkoutSummary({ 
+                                                time: formatTime(trainingTime), 
+                                                week: activeWeek,
+                                                exercises: exercisesDone,
+                                                dayName: day.name
+                                            });
                                             setView('cliente_listado'); 
                                         }
                                     }} className="bg-dark-800 text-brand-500 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border border-white/5 hover:bg-dark-700 transition-colors">Terminar</button>
