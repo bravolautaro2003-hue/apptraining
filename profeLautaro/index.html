@@ -217,7 +217,6 @@
             } catch(e) { console.log("Audio falló", e); }
         };
 
-        // Tonos específicos para el Interval Timer (Beeps)
         const playTone = (type = 'normal') => {
             try {
                 if (!audioCtx) unlockAudio();
@@ -569,22 +568,22 @@
                         <div className="flex gap-3 text-sm text-gray-300 items-center bg-dark-900/60 p-3 rounded-xl border border-dark-600">
                             <div className="flex items-center gap-2 flex-1">
                                 <span className="text-xs text-gray-400">Sets:</span>
-                                <input type="tel" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
+                                <input type="text" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.sets ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'sets', e.target.value)} onBlur={handleBlur} placeholder="4" />
                             </div>
                             <div className="flex items-center gap-2 flex-1">
                                 <span className="text-xs text-gray-400">Reps:</span>
-                                <input type="tel" className="w-14 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
+                                <input type="text" className="w-14 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.reps ?? ''} onChange={(e) => handleWeekConfigChange(editWeek, 'reps', e.target.value)} onBlur={handleBlur} placeholder="10" />
                             </div>
                             <div className="flex items-center gap-2 flex-[0.8]">
                                 <span className="text-xs text-gray-400">RIR:</span>
-                                <input type="tel" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.rir ?? localEx.rir ?? '2'} onChange={(e) => handleWeekConfigChange(editWeek, 'rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
+                                <input type="text" className="w-10 bg-dark-700 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500" value={currentWeekData.rir ?? localEx.rir ?? '2'} onChange={(e) => handleWeekConfigChange(editWeek, 'rir', e.target.value)} onBlur={handleBlur} placeholder="2" />
                             </div>
                         </div>
                     </div>
 
                     <div className="flex gap-4 text-sm text-gray-400 items-center py-1">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold uppercase tracking-wider">Descanso general:</span> <i className="fa-regular fa-clock text-brand-500"></i> <input type="tel" className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Descanso general:</span> <i className="fa-regular fa-clock text-brand-500"></i> <input type="text" className="w-14 bg-dark-900 rounded-lg p-1.5 text-center text-white font-bold outline-none border border-dark-600 focus:border-brand-500 text-xs" value={localEx.rest ?? '90s'} onChange={(e) => handleChange('rest', e.target.value)} onBlur={handleBlur} placeholder="90s" />
                         </div>
                     </div>
                     
@@ -862,7 +861,7 @@
                                 <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600 focus-within:border-brand-500 overflow-hidden shadow-inner w-full">
                                     <button type="button" onClick={(e) => adjustWeight(e, i, -2.5)} className="w-7 h-10 text-gray-400 hover:text-white hover:bg-dark-700 transition-colors text-xs font-bold flex items-center justify-center shrink-0">-</button>
                                     <input 
-                                        type="tel" 
+                                        type="text" 
                                         inputMode="decimal"
                                         className="w-full bg-transparent py-2.5 text-white outline-none text-center font-bold text-sm" 
                                         placeholder="-" 
@@ -874,7 +873,7 @@
                                 </div>
                                 
                                 <input 
-                                    type="tel" 
+                                    type="text" 
                                     className="w-full bg-dark-800 rounded-xl py-2.5 text-white outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
                                     placeholder="-" 
                                     value={set.reps ?? ''} 
@@ -883,7 +882,7 @@
                                 />
 
                                 <input 
-                                    type="tel" 
+                                    type="text" 
                                     className="w-full bg-dark-800 rounded-xl py-2.5 text-brand-500 outline-none text-center font-bold text-sm border border-dark-600 focus:border-brand-500 transition-colors box-border shadow-inner" 
                                     placeholder="RIR" 
                                     value={set.rir ?? ''} 
@@ -926,7 +925,7 @@
             );
         }
 
-                function IntervalTimer() {
+        function IntervalTimer() {
             const [config, setConfig] = useState({ prepare: 10, work: 20, rest: 10, cycles: 8, sets: 1 });
             const [status, setStatus] = useState('idle'); 
             const [phase, setPhase] = useState('prepare'); 
@@ -963,55 +962,53 @@
                 return () => { if (wakeLock) wakeLock.release().catch(()=>{}); };
             }, [status]);
 
-            // Esta es la función clave que soluciona el bucle del useEffect
-            const transitionNext = useCallback(() => {
-                if (phase === 'prepare') {
-                    playTone('start');
-                    setPhase('work');
-                    setTimeLeft(config.work);
-                } else if (phase === 'work') {
-                    if (currentCycle < config.cycles) {
-                        playTone('rest');
-                        setPhase('rest');
-                        setTimeLeft(config.rest);
-                    } else if (currentSet < config.sets) {
-                        playTone('rest');
-                        setPhase('rest'); 
-                        setTimeLeft(config.rest); 
-                    } else {
-                        playTone('done');
-                        setStatus('idle');
-                    }
-                } else if (phase === 'rest') {
-                    playTone('start');
-                    if (currentCycle < config.cycles) {
-                        setCurrentCycle(c => c + 1);
-                    } else {
-                        setCurrentCycle(1);
-                        setCurrentSet(s => s + 1);
-                    }
-                    setPhase('work');
-                    setTimeLeft(config.work);
-                }
-            }, [phase, currentCycle, currentSet, config]);
-
             useEffect(() => {
                 if (status === 'running') {
                     timerRef.current = setInterval(() => {
-                        setTimeLeft(prev => {
-                            if (prev > 1) {
-                                if (prev <= 4) playTone('tick');
-                                return prev - 1;
-                            }
-                            transitionNext();
-                            return 0;
-                        });
+                        setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
                     }, 1000);
                 } else {
                     if (timerRef.current) clearInterval(timerRef.current);
                 }
                 return () => { if (timerRef.current) clearInterval(timerRef.current); };
-            }, [status, transitionNext]);
+            }, [status]);
+
+            useEffect(() => {
+                if (status !== 'running') return;
+
+                if (timeLeft === 0) {
+                    if (phase === 'prepare') {
+                        playTone('start');
+                        setPhase('work');
+                        setTimeLeft(config.work);
+                    } else if (phase === 'work') {
+                        if (currentCycle < config.cycles) {
+                            playTone('rest');
+                            setPhase('rest');
+                            setTimeLeft(config.rest);
+                        } else if (currentSet < config.sets) {
+                            playTone('rest');
+                            setPhase('rest'); 
+                            setTimeLeft(config.rest); 
+                        } else {
+                            playTone('done');
+                            setStatus('idle');
+                        }
+                    } else if (phase === 'rest') {
+                        playTone('start');
+                        if (currentCycle < config.cycles) {
+                            setCurrentCycle(c => c + 1);
+                        } else {
+                            setCurrentCycle(1);
+                            setCurrentSet(s => s + 1);
+                        }
+                        setPhase('work');
+                        setTimeLeft(config.work);
+                    }
+                } else if (timeLeft > 0 && timeLeft <= 3) {
+                    playTone('tick');
+                }
+            }, [timeLeft, status, phase, currentCycle, currentSet, config]);
 
             const formatSecs = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
             const totalTime = config.prepare + (config.work * config.cycles + config.rest * (config.cycles - 1)) * config.sets + config.rest * (config.sets - 1);
@@ -2326,8 +2323,9 @@
                         </div>
                     )}
 
-                    {view === 'cliente_timer' && (
-                        <div className="app-container pb-24 relative z-10 bg-dark-900 animate-fade-in">
+                    {/* VISTA: TIMER (Siempre renderizada para clientes, pero oculta si no es activa, así no se reinicia al cambiar de vista) */}
+                    {view.startsWith('cliente_') && (
+                        <div className={`app-container pb-24 relative z-10 bg-dark-900 animate-fade-in ${view === 'cliente_timer' ? 'block' : 'hidden'}`}>
                             <header className="p-5 flex justify-between items-center sticky top-0 glass-header z-30 border-b border-white/5">
                                 <h1 className="text-sm font-black text-white tracking-widest flex items-center gap-3">
                                     <i className="fa-solid fa-stopwatch text-brand-500 text-lg"></i> Cronómetro de Intervalos
